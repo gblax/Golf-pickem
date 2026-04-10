@@ -10,6 +10,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set a placeholder DATABASE_URL for build (overridden at runtime)
+ENV DATABASE_URL="file:./build.db"
+
 # Generate Prisma client
 RUN npx prisma generate
 
@@ -37,6 +40,7 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
 
 # Copy start script
 COPY start.sh ./start.sh
