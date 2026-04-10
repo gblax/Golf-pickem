@@ -25,10 +25,6 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
 # Copy standalone Next.js build
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
@@ -46,9 +42,7 @@ COPY start.sh ./start.sh
 RUN chmod +x start.sh
 
 # Create data directory for SQLite volume mount
-RUN mkdir -p /data && chown nextjs:nodejs /data
-
-USER nextjs
+RUN mkdir -p /data
 
 # Default env vars (override at deploy time)
 ENV DATABASE_URL="file:/data/golf-pickem.db"
