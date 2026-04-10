@@ -29,17 +29,17 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy standalone build
+# Copy standalone Next.js build
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy Prisma files for migrations
+# Copy full node_modules so prisma migrate deploy has all its dependencies
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy Prisma migration files and config
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
 
 # Copy start script
 COPY start.sh ./start.sh
