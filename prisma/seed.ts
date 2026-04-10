@@ -1,10 +1,20 @@
+import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { hash } from "bcryptjs";
 import path from "path";
 
-const dbPath = path.resolve(process.cwd(), "dev.db");
-const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
+function getDbUrl(): string {
+  const dbUrl = process.env.DATABASE_URL;
+  if (dbUrl && dbUrl.startsWith("file:")) {
+    const filePath = dbUrl.replace("file:", "");
+    if (path.isAbsolute(filePath)) return dbUrl;
+    return `file:${path.resolve(process.cwd(), filePath)}`;
+  }
+  return `file:${path.resolve(process.cwd(), "dev.db")}`;
+}
+
+const adapter = new PrismaLibSql({ url: getDbUrl() });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
