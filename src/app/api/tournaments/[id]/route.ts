@@ -86,7 +86,15 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, buyIn, status, cutLine, startDate, endDate } = body;
+    const {
+      name,
+      buyIn,
+      status,
+      cutLine,
+      startDate,
+      endDate,
+      pickTimeLimit,
+    } = body;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
@@ -95,11 +103,31 @@ export async function PATCH(
     if (cutLine !== undefined) data.cutLine = cutLine;
     if (startDate !== undefined) data.startDate = new Date(startDate);
     if (endDate !== undefined) data.endDate = new Date(endDate);
+    if (pickTimeLimit !== undefined) {
+      const value = Number(pickTimeLimit);
+      if (!Number.isFinite(value) || value < 10 || value > 86400) {
+        return NextResponse.json(
+          { error: "pickTimeLimit must be between 10 and 86400 seconds" },
+          { status: 400 }
+        );
+      }
+      data.pickTimeLimit = Math.round(value);
+    }
 
     const tournament = await prisma.tournament.update({
       where: { id },
       data,
     });
+
+    // If pick time changed, also update the draft so subsequent picks use
+    // the new limit. This does not touch the current pick's existing
+    // deadline — it just affects the next extension.
+    if (data.pickTimeLimit !== undefined) {
+      await prisma.draft.updateMany({
+        where: { tournamentId: id },
+        data: { pickTimeLimit: data.pickTimeLimit as number },
+      });
+    }
 
     return NextResponse.json(tournament);
   } catch (error) {

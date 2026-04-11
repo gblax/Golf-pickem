@@ -31,6 +31,7 @@ export default function NewTournamentPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [buyIn, setBuyIn] = useState("50");
+  const [pickTime, setPickTime] = useState("120");
   const [externalId, setExternalId] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -92,6 +93,7 @@ export default function NewTournamentPage() {
           startDate,
           endDate,
           buyIn: Math.round(parseFloat(buyIn) * 100),
+          pickTimeLimit: parseInt(pickTime, 10),
           externalId: externalId || undefined,
         }),
       });
@@ -166,18 +168,34 @@ export default function NewTournamentPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="buyIn">Buy-in Amount ($)</Label>
-              <Input
-                id="buyIn"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                value={buyIn}
-                onChange={(e) => setBuyIn(e.target.value)}
-                placeholder="50"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="buyIn">Buy-in Amount ($)</Label>
+                <Input
+                  id="buyIn"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={buyIn}
+                  onChange={(e) => setBuyIn(e.target.value)}
+                  placeholder="50"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pickTime">Draft pick time (seconds)</Label>
+                <Input
+                  id="pickTime"
+                  type="number"
+                  min="10"
+                  max="86400"
+                  step="1"
+                  required
+                  value={pickTime}
+                  onChange={(e) => setPickTime(e.target.value)}
+                  placeholder="120"
+                />
+              </div>
             </div>
 
             <div>

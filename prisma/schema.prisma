@@ -35,6 +35,7 @@ model Tournament {
   buyIn             Int                @default(5000) // stored in cents
   status            String             @default("UPCOMING") // UPCOMING, DRAFT_OPEN, IN_PROGRESS, COMPLETE
   cutLine           Int?
+  pickTimeLimit     Int                @default(120) // default draft pick time in seconds
   lastScoresSyncAt  DateTime?
   createdAt         DateTime           @default(now())
   entries           WeekEntry[]

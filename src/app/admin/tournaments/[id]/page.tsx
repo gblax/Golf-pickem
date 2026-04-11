@@ -29,6 +29,7 @@ type Tournament = {
   buyIn: number;
   status: string;
   cutLine: number | null;
+  pickTimeLimit: number;
   _count: { entries: number; golfers: number };
   draft: { id: string; status: string; mode: string } | null;
 };
@@ -82,6 +83,8 @@ export default function ManageTournamentPage() {
   const [removingEntry, setRemovingEntry] = useState(false);
   const [buyInInput, setBuyInInput] = useState("");
   const [savingBuyIn, setSavingBuyIn] = useState(false);
+  const [pickTimeInput, setPickTimeInput] = useState("");
+  const [savingPickTime, setSavingPickTime] = useState(false);
 
   const id = params.id as string;
 
@@ -91,6 +94,7 @@ export default function ManageTournamentPage() {
       const data = await res.json();
       setTournament(data);
       setBuyInInput((data.buyIn / 100).toString());
+      setPickTimeInput(String(data.pickTimeLimit ?? 120));
     }
   }, [id]);
 
@@ -328,6 +332,30 @@ export default function ManageTournamentPage() {
     setSavingBuyIn(false);
   }
 
+  async function savePickTime() {
+    const seconds = parseInt(pickTimeInput, 10);
+    if (!Number.isFinite(seconds) || seconds < 10 || seconds > 86400) {
+      setError("Pick time must be between 10 and 86400 seconds");
+      return;
+    }
+    if (tournament && seconds === tournament.pickTimeLimit) return;
+    setSavingPickTime(true);
+    setError("");
+    const res = await fetch(`/api/tournaments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pickTimeLimit: seconds }),
+    });
+    if (res.ok) {
+      setMessage("Pick time updated");
+      fetchTournament();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to update pick time");
+    }
+    setSavingPickTime(false);
+  }
+
   async function deleteTournament() {
     setDeleting(true);
     setError("");
@@ -449,35 +477,71 @@ export default function ManageTournamentPage() {
         </Section>
 
         <Section title="Settings">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="flex-1 sm:max-w-xs">
-              <Label htmlFor="buy-in">Buy-in ($)</Label>
-              <Input
-                id="buy-in"
-                type="number"
-                min="0"
-                step="0.01"
-                value={buyInInput}
-                onChange={(e) => setBuyInInput(e.target.value)}
-              />
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1 sm:max-w-xs">
+                <Label htmlFor="buy-in">Buy-in ($)</Label>
+                <Input
+                  id="buy-in"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={buyInInput}
+                  onChange={(e) => setBuyInInput(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="primary"
+                onClick={saveBuyIn}
+                loading={savingBuyIn}
+                disabled={
+                  savingBuyIn ||
+                  Math.round(parseFloat(buyInInput || "0") * 100) ===
+                    tournament.buyIn
+                }
+              >
+                {savingBuyIn ? "Saving..." : "Save"}
+              </Button>
             </div>
-            <Button
-              variant="primary"
-              onClick={saveBuyIn}
-              loading={savingBuyIn}
-              disabled={
-                savingBuyIn ||
-                Math.round(parseFloat(buyInInput || "0") * 100) ===
-                  tournament.buyIn
-              }
-            >
-              {savingBuyIn ? "Saving..." : "Save"}
-            </Button>
+            <p className="-mt-2 text-xs text-stone-500">
+              Changing the buy-in recalculates the total pool and payouts
+              shown across the app.
+            </p>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1 sm:max-w-xs">
+                <Label htmlFor="pick-time">Draft pick time (seconds)</Label>
+                <Input
+                  id="pick-time"
+                  type="number"
+                  min="10"
+                  max="86400"
+                  step="1"
+                  value={pickTimeInput}
+                  onChange={(e) => setPickTimeInput(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="primary"
+                onClick={savePickTime}
+                loading={savingPickTime}
+                disabled={
+                  savingPickTime ||
+                  parseInt(pickTimeInput || "0", 10) ===
+                    tournament.pickTimeLimit
+                }
+              >
+                {savingPickTime ? "Saving..." : "Save"}
+              </Button>
+            </div>
+            <p className="-mt-2 text-xs text-stone-500">
+              How long each player has to pick when on the clock. Defaults to
+              120 (2 min) for live drafts; try 14400 (4 hr) for async.
+              {tournament.draft &&
+                tournament.draft.status === "IN_PROGRESS" &&
+                " Applies to the next picker — the current deadline is unchanged."}
+            </p>
           </div>
-          <p className="mt-2 text-xs text-stone-500">
-            Changing the buy-in recalculates the total pool and payouts shown
-            across the app.
-          </p>
         </Section>
 
         <Section

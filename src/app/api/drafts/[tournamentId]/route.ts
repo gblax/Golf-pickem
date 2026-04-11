@@ -130,7 +130,9 @@ export async function POST(
     const draftOrder = generateDraftOrder(userIds);
 
     const draftMode = mode === "ASYNC" ? "ASYNC" : "LIVE";
-    const timeLimit = pickTimeLimit ?? (draftMode === "ASYNC" ? 14400 : 120);
+    // Default to the tournament-configured pick time. Admins set this per
+    // tournament via the detail page; an explicit request override still wins.
+    const timeLimit = pickTimeLimit ?? tournament.pickTimeLimit;
 
     const draft = await prisma.draft.create({
       data: {
