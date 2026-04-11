@@ -14,6 +14,7 @@ import {
   PageHeader,
   Button,
 } from "@/components/ui";
+import ChangePasswordCard from "@/components/ChangePasswordCard";
 
 interface ProfileEntry {
   id: string;
@@ -216,6 +217,10 @@ export default async function ProfilePage() {
             </div>
           </Card>
         )}
+      </section>
+
+      <section className="mt-8">
+        <ChangePasswordCard />
       </section>
     </div>
   );

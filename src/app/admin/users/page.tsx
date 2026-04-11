@@ -81,6 +81,7 @@ export default async function AdminUsersPage() {
                   <td className="whitespace-nowrap px-4 py-3">
                     <UserRowActions
                       userId={user.id}
+                      userName={user.name}
                       isAdmin={user.isAdmin}
                       isSelf={user.id === currentUserId}
                       entryCount={user._count.entries}

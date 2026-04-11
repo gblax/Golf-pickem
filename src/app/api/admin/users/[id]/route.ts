@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hash } from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -27,10 +28,32 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { isAdmin } = body as { isAdmin?: boolean };
+    const { isAdmin, password } = body as {
+      isAdmin?: boolean;
+      password?: string;
+    };
 
-    if (typeof isAdmin !== "boolean") {
-      return NextResponse.json({ error: "isAdmin must be a boolean" }, { status: 400 });
+    if (isAdmin === undefined && password === undefined) {
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 }
+      );
+    }
+
+    if (isAdmin !== undefined && typeof isAdmin !== "boolean") {
+      return NextResponse.json(
+        { error: "isAdmin must be a boolean" },
+        { status: 400 }
+      );
+    }
+
+    if (password !== undefined) {
+      if (typeof password !== "string" || password.length < 6) {
+        return NextResponse.json(
+          { error: "Password must be at least 6 characters" },
+          { status: 400 }
+        );
+      }
     }
 
     const target = await prisma.user.findUnique({ where: { id } });
@@ -39,7 +62,7 @@ export async function PATCH(
     }
 
     // Can't demote yourself
-    if (currentUserId === id && !isAdmin) {
+    if (isAdmin !== undefined && currentUserId === id && !isAdmin) {
       return NextResponse.json(
         { error: "You cannot remove your own admin status" },
         { status: 400 }
@@ -47,7 +70,7 @@ export async function PATCH(
     }
 
     // Can't demote the last admin
-    if (!isAdmin && target.isAdmin) {
+    if (isAdmin === false && target.isAdmin) {
       const adminCount = await prisma.user.count({ where: { isAdmin: true } });
       if (adminCount <= 1) {
         return NextResponse.json(
@@ -57,9 +80,13 @@ export async function PATCH(
       }
     }
 
+    const data: { isAdmin?: boolean; passwordHash?: string } = {};
+    if (isAdmin !== undefined) data.isAdmin = isAdmin;
+    if (password !== undefined) data.passwordHash = await hash(password, 12);
+
     const updated = await prisma.user.update({
       where: { id },
-      data: { isAdmin },
+      data,
     });
 
     return NextResponse.json({ id: updated.id, isAdmin: updated.isAdmin });
