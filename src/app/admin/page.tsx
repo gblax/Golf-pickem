@@ -6,12 +6,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { TOURNAMENT_STATUS } from "@/types";
+import SyncScheduleButton from "./SyncScheduleButton";
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     [TOURNAMENT_STATUS.UPCOMING]: "bg-gray-100 text-gray-700",
     [TOURNAMENT_STATUS.DRAFT_OPEN]: "bg-blue-100 text-blue-700",
-    [TOURNAMENT_STATUS.DRAFT_COMPLETE]: "bg-purple-100 text-purple-700",
     [TOURNAMENT_STATUS.IN_PROGRESS]: "bg-green-100 text-green-700",
     [TOURNAMENT_STATUS.COMPLETE]: "bg-yellow-100 text-yellow-700",
   };
@@ -40,7 +40,6 @@ export default async function AdminDashboard() {
           status: {
             in: [
               TOURNAMENT_STATUS.DRAFT_OPEN,
-              TOURNAMENT_STATUS.DRAFT_COMPLETE,
               TOURNAMENT_STATUS.IN_PROGRESS,
             ],
           },
@@ -60,13 +59,14 @@ export default async function AdminDashboard() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           <Link
             href="/admin/tournaments/new"
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
           >
             + New Tournament
           </Link>
+          <SyncScheduleButton />
           <Link
             href="/admin/users"
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"

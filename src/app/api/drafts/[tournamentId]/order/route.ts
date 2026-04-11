@@ -53,7 +53,7 @@ export async function POST(
 
     return NextResponse.json({
       message: "Draft order re-randomized",
-      draftOrder: newOrder.map((id) => ({ id, name: userMap.get(id) ?? "Unknown" })),
+      draftOrder: newOrder.map((id) => ({ userId: id, userName: userMap.get(id) ?? "Unknown" })),
     });
   } catch (error) {
     console.error("Error re-randomizing draft order:", error);

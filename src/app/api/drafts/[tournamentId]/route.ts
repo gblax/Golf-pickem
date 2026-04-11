@@ -50,7 +50,7 @@ export async function GET(
 
     return NextResponse.json({
       ...draft,
-      draftOrder: draftOrder.map((id) => ({ id, name: userMap.get(id) ?? "Unknown" })),
+      draftOrder: draftOrder.map((id) => ({ userId: id, userName: userMap.get(id) ?? "Unknown" })),
       pickSequence,
       currentPick,
     });

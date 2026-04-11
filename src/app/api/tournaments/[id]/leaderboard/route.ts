@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rankEntries } from "@/lib/scoring";
+import { refreshTournamentScores } from "@/lib/scores";
+
+const SCORES_CACHE_MS = 60_000; // 60 seconds
 
 export async function GET(
   request: Request,
@@ -18,6 +21,22 @@ export async function GET(
         { error: "Tournament not found" },
         { status: 404 }
       );
+    }
+
+    // Auto-refresh scores from ESPN if the tournament is in progress and
+    // our cached scores are older than SCORES_CACHE_MS. Silently swallow
+    // ESPN errors so a bad upstream doesn't break the leaderboard.
+    if (
+      tournament.status === "IN_PROGRESS" &&
+      tournament.externalId &&
+      (!tournament.lastScoresSyncAt ||
+        Date.now() - tournament.lastScoresSyncAt.getTime() > SCORES_CACHE_MS)
+    ) {
+      try {
+        await refreshTournamentScores(id);
+      } catch (err) {
+        console.error("Auto-refresh scores failed:", err);
+      }
     }
 
     const entries = await prisma.weekEntry.findMany({

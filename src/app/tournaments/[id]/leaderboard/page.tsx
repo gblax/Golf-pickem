@@ -67,7 +67,7 @@ function getPayoutStructure(entryCount: number, buyIn: number): PayoutSlot[] {
   ];
 }
 
-const REFRESH_INTERVAL = 30;
+const REFRESH_INTERVAL = 60;
 
 export default function LeaderboardPage() {
   const params = useParams<{ id: string }>();

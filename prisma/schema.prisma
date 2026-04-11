@@ -27,18 +27,19 @@ model Golfer {
 }
 
 model Tournament {
-  id         String             @id @default(cuid())
-  name       String
-  externalId String?
-  startDate  DateTime
-  endDate    DateTime
-  buyIn      Int                @default(5000) // stored in cents
-  status     String             @default("UPCOMING") // UPCOMING, DRAFT_OPEN, DRAFT_COMPLETE, IN_PROGRESS, COMPLETE
-  cutLine    Int?
-  createdAt  DateTime           @default(now())
-  entries    WeekEntry[]
-  golfers    TournamentGolfer[]
-  draft      Draft?
+  id                String             @id @default(cuid())
+  name              String
+  externalId        String?            @unique
+  startDate         DateTime
+  endDate           DateTime
+  buyIn             Int                @default(5000) // stored in cents
+  status            String             @default("UPCOMING") // UPCOMING, DRAFT_OPEN, IN_PROGRESS, COMPLETE
+  cutLine           Int?
+  lastScoresSyncAt  DateTime?
+  createdAt         DateTime           @default(now())
+  entries           WeekEntry[]
+  golfers           TournamentGolfer[]
+  draft             Draft?
 }
 
 model TournamentGolfer {

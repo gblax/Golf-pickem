@@ -152,7 +152,7 @@ export async function POST(
       if (draftIsComplete) {
         await tx.tournament.update({
           where: { id: tournamentId },
-          data: { status: "DRAFT_COMPLETE" },
+          data: { status: "IN_PROGRESS" },
         });
       }
     });

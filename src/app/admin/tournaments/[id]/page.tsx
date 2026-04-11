@@ -222,7 +222,7 @@ export default function ManageTournamentPage() {
     return <div className="p-8 text-center text-red-600">Tournament not found</div>;
   }
 
-  const statusFlow = ["UPCOMING", "DRAFT_OPEN", "DRAFT_COMPLETE", "IN_PROGRESS", "COMPLETE"];
+  const statusFlow = ["UPCOMING", "DRAFT_OPEN", "IN_PROGRESS", "COMPLETE"];
   const currentIdx = statusFlow.indexOf(tournament.status);
 
   return (
@@ -363,7 +363,7 @@ export default function ManageTournamentPage() {
       </section>
 
       {/* Draft Management */}
-      {["DRAFT_OPEN", "DRAFT_COMPLETE", "IN_PROGRESS", "COMPLETE"].includes(tournament.status) && (
+      {["DRAFT_OPEN", "IN_PROGRESS", "COMPLETE"].includes(tournament.status) && (
         <section className="rounded-lg bg-white p-6 shadow">
           <h2 className="text-lg font-semibold mb-4">
             Draft ({tournament._count.entries} players entered)
@@ -421,7 +421,7 @@ export default function ManageTournamentPage() {
       )}
 
       {/* Score Management */}
-      {["IN_PROGRESS", "DRAFT_COMPLETE"].includes(tournament.status) && (
+      {tournament.status === "IN_PROGRESS" && (
         <section className="rounded-lg bg-white p-6 shadow">
           <h2 className="text-lg font-semibold mb-4">Scores</h2>
           <div className="flex flex-wrap gap-2">
@@ -444,7 +444,7 @@ export default function ManageTournamentPage() {
       )}
 
       {/* Finalize */}
-      {["IN_PROGRESS", "DRAFT_COMPLETE"].includes(tournament.status) && (
+      {tournament.status === "IN_PROGRESS" && (
         <section className="rounded-lg bg-white p-6 shadow">
           <h2 className="text-lg font-semibold mb-4">Finalize Tournament</h2>
           <p className="text-sm text-gray-600 mb-3">

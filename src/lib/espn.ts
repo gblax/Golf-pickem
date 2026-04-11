@@ -35,6 +35,83 @@ export async function fetchTournaments(): Promise<ESPNTournament[]> {
   }));
 }
 
+function formatEspnDate(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}${m}${d}`;
+}
+
+/**
+ * Fetch all PGA events from today through end of the current year.
+ * ESPN's /scoreboard endpoint accepts `?dates=YYYYMMDD-YYYYMMDD`.
+ * If a full-year range returns nothing or errors, fall back to month-by-month.
+ */
+export async function fetchSchedule(): Promise<ESPNTournament[]> {
+  const now = new Date();
+  const endOfYear = new Date(Date.UTC(now.getUTCFullYear(), 11, 31));
+
+  // First attempt: full range in one request.
+  try {
+    const events = await fetchEventsInRange(now, endOfYear);
+    if (events.length > 0) return dedupeById(events);
+  } catch (err) {
+    console.warn("Full-year ESPN schedule fetch failed, falling back:", err);
+  }
+
+  // Fallback: iterate month-by-month and concatenate.
+  const all: ESPNTournament[] = [];
+  const cursor = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  while (cursor <= endOfYear) {
+    const monthStart = new Date(cursor);
+    const monthEnd = new Date(
+      Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0)
+    );
+    try {
+      const monthEvents = await fetchEventsInRange(
+        monthStart < now ? now : monthStart,
+        monthEnd
+      );
+      all.push(...monthEvents);
+    } catch (err) {
+      console.warn(`ESPN month fetch failed for ${formatEspnDate(monthStart)}:`, err);
+    }
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  return dedupeById(all);
+}
+
+async function fetchEventsInRange(
+  start: Date,
+  end: Date
+): Promise<ESPNTournament[]> {
+  const dates = `${formatEspnDate(start)}-${formatEspnDate(end)}`;
+  const res = await fetch(`${ESPN_BASE}/scoreboard?dates=${dates}`, {
+    next: { revalidate: 0 },
+  });
+  if (!res.ok) throw new Error(`ESPN API error: ${res.status}`);
+
+  const data = await res.json();
+  const events = data.events || [];
+
+  return events.map((event: Record<string, unknown>) => ({
+    id: String(event.id),
+    name: String(event.name),
+    startDate: String(event.date),
+    endDate: String(
+      (event as Record<string, unknown>).endDate || event.date
+    ),
+  }));
+}
+
+function dedupeById(events: ESPNTournament[]): ESPNTournament[] {
+  const seen = new Map<string, ESPNTournament>();
+  for (const ev of events) {
+    if (!seen.has(ev.id)) seen.set(ev.id, ev);
+  }
+  return Array.from(seen.values());
+}
+
 export async function fetchTournamentField(
   eventId: string
 ): Promise<ESPNGolfer[]> {
