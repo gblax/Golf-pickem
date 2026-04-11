@@ -65,8 +65,9 @@ export default function Nav() {
     ? [
         { href: "/tournaments", label: "Tournaments" },
         { href: "/standings", label: "Standings" },
+        { href: "/rules", label: "Rules" },
       ]
-    : [];
+    : [{ href: "/rules", label: "Rules" }];
 
   const isAdmin = (session?.user as { isAdmin?: boolean })?.isAdmin;
 
@@ -247,6 +248,21 @@ export default function Nav() {
               </>
             ) : (
               <>
+                {navLinks.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-sm",
+                      isActive(l.href)
+                        ? "bg-emerald-800 text-white"
+                        : "text-emerald-100 hover:bg-emerald-800/60"
+                    )}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
                 <Link
                   href="/login"
                   className="rounded-md px-3 py-2 text-sm text-emerald-100 hover:bg-emerald-800/60"

@@ -82,6 +82,7 @@ export async function DELETE(
 
     const tournament = await prisma.tournament.findUnique({
       where: { id },
+      include: { draft: true },
     });
 
     if (!tournament) {
@@ -92,6 +93,13 @@ export async function DELETE(
     }
 
     if (tournament.status !== "UPCOMING" && tournament.status !== "DRAFT_OPEN") {
+      return NextResponse.json(
+        { error: "Cannot withdraw after the draft has started" },
+        { status: 400 }
+      );
+    }
+
+    if (tournament.draft && tournament.draft.status !== "PENDING") {
       return NextResponse.json(
         { error: "Cannot withdraw after the draft has started" },
         { status: 400 }

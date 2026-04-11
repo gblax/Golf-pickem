@@ -17,6 +17,7 @@ import {
   Avatar,
   EmptyState,
 } from "@/components/ui";
+import WithdrawButton from "@/components/WithdrawButton";
 
 function getPayoutStructure(
   entryCount: number,
@@ -85,6 +86,11 @@ export default async function TournamentDetailPage({
   const userEntry = userId
     ? tournament.entries.find((e) => e.userId === userId)
     : null;
+  const canWithdraw =
+    !!userEntry &&
+    (tournament.status === TOURNAMENT_STATUS.UPCOMING ||
+      tournament.status === TOURNAMENT_STATUS.DRAFT_OPEN) &&
+    (!tournament.draft || tournament.draft.status === "PENDING");
 
   const payouts = getPayoutStructure(
     tournament.entries.length,
@@ -115,6 +121,12 @@ export default async function TournamentDetailPage({
               <Badge variant="emerald" size="md">
                 Entered
               </Badge>
+            )}
+            {canWithdraw && (
+              <WithdrawButton
+                tournamentId={id}
+                tournamentName={tournament.name}
+              />
             )}
             {tournament.draft && (
               <Link href={`/tournaments/${id}/draft`}>
