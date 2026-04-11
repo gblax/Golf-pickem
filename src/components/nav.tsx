@@ -72,7 +72,10 @@ export default function Nav() {
   const isAdmin = (session?.user as { isAdmin?: boolean })?.isAdmin;
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-gold-400/60 bg-emerald-700 text-white shadow-sm">
+    <nav
+      className="sticky top-0 z-40 border-b border-gold-400/60 bg-emerald-700 text-white shadow-sm"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
       <div className="mx-auto max-w-6xl px-4">
         <div className="flex h-16 items-center justify-between">
           <Link

@@ -59,6 +59,10 @@
 body {
   background: var(--color-cream-50);
   color: var(--color-stone-900);
+  /* Honor iOS safe-area insets when running as a PWA (home-screen install) */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Subtle golden pulse used for the "on the clock" banner when time is low */
