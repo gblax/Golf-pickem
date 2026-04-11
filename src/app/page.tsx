@@ -29,12 +29,12 @@ export default async function HomePage() {
             Weekly PGA Pick-em Pool
           </div>
           <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-stone-900 sm:text-6xl">
-            Draft your four,{" "}
+            Pick two pros,{" "}
             <span className="text-emerald-700">take the pot.</span>
           </h1>
           <p className="mt-5 max-w-xl text-lg text-stone-600">
-            A snake-draft golf pick&apos;em for friends. Pick wisely, sweat the
-            cut line, and climb the leaderboard every single week.
+            A snake-draft PGA pick&apos;em for friends. Draft two golfers,
+            sweat the cut line, and climb the leaderboard every weekend.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/register">
@@ -51,18 +51,18 @@ export default async function HomePage() {
           <div className="mt-16 grid w-full max-w-3xl grid-cols-1 gap-4 text-left sm:grid-cols-3">
             <FeatureCard
               icon={<Target className="h-5 w-5" />}
-              title="Draft four"
-              body="Snake draft one pick per round, two rounds total."
+              title="Snake draft"
+              body="Two rounds, two picks. Order reverses each round so last gets first."
             />
             <FeatureCard
               icon={<ListOrdered className="h-5 w-5" />}
               title="Live leaderboard"
-              body="Scores refresh from ESPN throughout the weekend."
+              body="Scores refresh from the PGA feed all weekend long."
             />
             <FeatureCard
               icon={<Trophy className="h-5 w-5" />}
               title="Win the pot"
-              body="Payouts stack up to the top finishers each week."
+              body="Top finishers split the weekly prize pool."
             />
           </div>
         </div>
