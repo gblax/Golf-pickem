@@ -108,3 +108,69 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!(session.user as { isAdmin?: boolean }).isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+    }
+
+    const tournament = await prisma.tournament.findUnique({
+      where: { id },
+      include: { draft: { select: { status: true } } },
+    });
+    if (!tournament) {
+      return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
+    }
+
+    if (tournament.status !== "UPCOMING" && tournament.status !== "DRAFT_OPEN") {
+      return NextResponse.json(
+        { error: "Entries can only be removed before the draft starts" },
+        { status: 400 }
+      );
+    }
+
+    if (tournament.draft && tournament.draft.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "Cannot remove entries after the draft has started" },
+        { status: 400 }
+      );
+    }
+
+    const existing = await prisma.weekEntry.findUnique({
+      where: {
+        userId_tournamentId: { userId, tournamentId: id },
+      },
+    });
+    if (!existing) {
+      return NextResponse.json(
+        { error: "User is not entered in this tournament" },
+        { status: 404 }
+      );
+    }
+
+    // WeekEntry.picks cascades on delete. No draft picks exist yet at this stage.
+    await prisma.weekEntry.delete({ where: { id: existing.id } });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Error removing entry:", error);
+    const message = error instanceof Error ? error.message : "Failed to remove entry";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

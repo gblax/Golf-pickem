@@ -78,6 +78,10 @@ export default function ManageTournamentPage() {
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [removeEntry, setRemoveEntry] = useState<EntryRow | null>(null);
+  const [removingEntry, setRemovingEntry] = useState(false);
+  const [buyInInput, setBuyInInput] = useState("");
+  const [savingBuyIn, setSavingBuyIn] = useState(false);
 
   const id = params.id as string;
 
@@ -86,6 +90,7 @@ export default function ManageTournamentPage() {
     if (res.ok) {
       const data = await res.json();
       setTournament(data);
+      setBuyInInput((data.buyIn / 100).toString());
     }
   }, [id]);
 
@@ -276,6 +281,53 @@ export default function ManageTournamentPage() {
     }
   }
 
+  async function confirmRemoveEntry() {
+    if (!removeEntry) return;
+    setRemovingEntry(true);
+    setError("");
+    const res = await fetch(
+      `/api/admin/tournaments/${id}/entries?userId=${encodeURIComponent(
+        removeEntry.userId
+      )}`,
+      { method: "DELETE" }
+    );
+    if (res.ok) {
+      setMessage(`${removeEntry.userName} opted out`);
+      setRemoveEntry(null);
+      fetchEntries();
+      fetchTournament();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to remove entry");
+    }
+    setRemovingEntry(false);
+  }
+
+  async function saveBuyIn() {
+    const dollars = parseFloat(buyInInput);
+    if (!Number.isFinite(dollars) || dollars < 0) {
+      setError("Buy-in must be a non-negative number");
+      return;
+    }
+    const cents = Math.round(dollars * 100);
+    if (tournament && cents === tournament.buyIn) return;
+    setSavingBuyIn(true);
+    setError("");
+    const res = await fetch(`/api/tournaments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ buyIn: cents }),
+    });
+    if (res.ok) {
+      setMessage("Buy-in updated");
+      fetchTournament();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to update buy-in");
+    }
+    setSavingBuyIn(false);
+  }
+
   async function deleteTournament() {
     setDeleting(true);
     setError("");
@@ -330,6 +382,9 @@ export default function ManageTournamentPage() {
   const isDraftOpen = tournament.status === "DRAFT_OPEN";
   const isInProgress = tournament.status === "IN_PROGRESS";
   const isComplete = tournament.status === "COMPLETE";
+  const canRemoveEntries =
+    (isUpcoming || isDraftOpen) &&
+    (!tournament.draft || tournament.draft.status === "PENDING");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
@@ -393,6 +448,38 @@ export default function ManageTournamentPage() {
           </div>
         </Section>
 
+        <Section title="Settings">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1 sm:max-w-xs">
+              <Label htmlFor="buy-in">Buy-in ($)</Label>
+              <Input
+                id="buy-in"
+                type="number"
+                min="0"
+                step="0.01"
+                value={buyInInput}
+                onChange={(e) => setBuyInInput(e.target.value)}
+              />
+            </div>
+            <Button
+              variant="primary"
+              onClick={saveBuyIn}
+              loading={savingBuyIn}
+              disabled={
+                savingBuyIn ||
+                Math.round(parseFloat(buyInInput || "0") * 100) ===
+                  tournament.buyIn
+              }
+            >
+              {savingBuyIn ? "Saving..." : "Save"}
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-stone-500">
+            Changing the buy-in recalculates the total pool and payouts shown
+            across the app.
+          </p>
+        </Section>
+
         <Section
           title="Entries"
           description={`${entries.length} ${entries.length === 1 ? "player" : "players"}`}
@@ -434,10 +521,24 @@ export default function ManageTournamentPage() {
                   key={e.id}
                   className="flex items-center justify-between gap-3 py-2"
                 >
-                  <span className="font-medium text-stone-900">
-                    {e.userName}
-                  </span>
-                  <span className="text-stone-500">{e.userEmail}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-stone-900">
+                      {e.userName}
+                    </p>
+                    <p className="truncate text-xs text-stone-500">
+                      {e.userEmail}
+                    </p>
+                  </div>
+                  {canRemoveEntries && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setRemoveEntry(e)}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -680,6 +781,24 @@ export default function ManageTournamentPage() {
         loading={finalizing}
         onConfirm={finalize}
         onCancel={() => setFinalizeOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={removeEntry !== null}
+        title="Remove entry?"
+        description={
+          removeEntry ? (
+            <>
+              Remove <strong>{removeEntry.userName}</strong> from this
+              tournament? They can be opted in again before the draft starts.
+            </>
+          ) : null
+        }
+        confirmLabel="Remove"
+        variant="danger"
+        loading={removingEntry}
+        onConfirm={confirmRemoveEntry}
+        onCancel={() => setRemoveEntry(null)}
       />
     </div>
   );
