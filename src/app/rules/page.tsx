@@ -22,102 +22,79 @@ export default function RulesPage() {
       <PageHeader
         eyebrow="How it works"
         title="Rules & Scoring"
-        subtitle="Everything you need to know about entering, drafting, and winning."
+        subtitle="How to enter, draft, and win."
       />
 
       <div className="space-y-6">
-        <Section
-          icon={<Flag className="h-5 w-5" />}
-          title="Overview"
-        >
+        <Section icon={<Flag className="h-5 w-5" />} title="Overview">
           <p>
-            Golf Pick&apos;em is a friends-only weekly PGA Tour pool. Each
-            tournament, members buy in, draft pro golfers in a snake format,
-            and compete for a cash pool based on the combined performance of
-            their picks at the real event.
-          </p>
-          <p>
-            Everything follows the live PGA Tour scoreboard, so your
-            standings update alongside the real tournament.
+            Golf Pick&apos;em is a friends-only weekly PGA Tour pool. Buy in,
+            draft two pros, and your score follows them live on the real
+            leaderboard.
           </p>
         </Section>
 
         <Section
           icon={<ClipboardList className="h-5 w-5" />}
-          title="Entering a Tournament"
+          title="Entering"
         >
           <ul className="ml-5 list-disc space-y-2">
             <li>
-              Browse upcoming events on the <strong>Tournaments</strong> page
-              and open the one you want to play.
+              Open a tournament from the <strong>Tournaments</strong> page and
+              hit <strong>Enter Tournament</strong>.
             </li>
             <li>
-              Click <strong>Enter Tournament</strong> to opt in. You can
-              enter any event in the <em>Upcoming</em> or <em>Draft Open</em>{" "}
-              state.
+              Entries are open while the event is <em>Upcoming</em> or{" "}
+              <em>Draft Open</em>.
             </li>
             <li>
-              Each tournament has a fixed buy-in set by the commissioner. The
-              total pool equals the buy-in times the number of entrants.
+              The commissioner sets the buy-in. The pool is buy-in &times;
+              entrants.
             </li>
             <li>
-              Changed your mind? You can{" "}
-              <strong>withdraw from a tournament</strong> any time before the
-              live draft begins. Once the first pick is made, entries are
-              locked.
+              You can <strong>withdraw</strong> any time before the first pick
+              is made. After that, entries lock.
             </li>
           </ul>
         </Section>
 
-        <Section
-          icon={<Gavel className="h-5 w-5" />}
-          title="The Draft"
-        >
+        <Section icon={<Gavel className="h-5 w-5" />} title="The Draft">
           <ul className="ml-5 list-disc space-y-2">
             <li>
-              Once the commissioner opens the draft, entrants take turns
-              selecting from the tournament field.
+              The draft order is randomized. Once it opens, take turns picking
+              from the field.
             </li>
             <li>
-              Drafts run as a <strong>snake</strong>: the order reverses each
-              round, so if you pick last in round 1, you pick first in round
-              2.
+              It&apos;s a <strong>snake</strong>: the order reverses each
+              round. Last pick in round 1 gets first pick in round 2.
             </li>
             <li>
-              Each player drafts <strong>two golfers</strong>. No two players
-              can draft the same golfer.
+              Each player drafts <strong>two golfers</strong>. No duplicates.
             </li>
             <li>
-              The draft order is randomized automatically before picks
-              begin. When the last pick is made, the tournament flips to{" "}
+              When the final pick is in, the tournament flips to{" "}
               <em>In Progress</em> and the leaderboard opens.
             </li>
           </ul>
         </Section>
 
-        <Section
-          icon={<Target className="h-5 w-5" />}
-          title="Scoring"
-        >
+        <Section icon={<Target className="h-5 w-5" />} title="Scoring">
           <ul className="ml-5 list-disc space-y-2">
             <li>
-              Your entry&apos;s score is the <strong>sum</strong> of your two
-              golfers&apos; strokes relative to par across the entire event.
-              Lower is better.
+              Your score is the <strong>sum</strong> of your two golfers&apos;
+              strokes to par. Lower is better.
             </li>
             <li>
-              Example: if one pick finishes <strong>-8</strong> and the other
-              finishes <strong>+2</strong>, your entry score is{" "}
+              Example: <strong>-8</strong> + <strong>+2</strong> ={" "}
               <strong>-6</strong>.
             </li>
             <li>
-              The leaderboard refreshes automatically during active rounds
-              using live data from the PGA scoreboard.
+              The leaderboard refreshes automatically from the live PGA
+              scoreboard.
             </li>
             <li>
-              Ties are broken by the <strong>best individual finish</strong>{" "}
-              between the two picks; if still tied, the pool is split evenly
-              among tied positions.
+              Ties go to the <strong>best individual finish</strong>. Still
+              tied? Split the prize evenly.
             </li>
           </ul>
         </Section>
@@ -128,32 +105,23 @@ export default function RulesPage() {
         >
           <ul className="ml-5 list-disc space-y-2">
             <li>
-              <strong>Missed cut:</strong> a golfer who misses the cut still
-              counts for your entry — their score is locked at whatever they
-              posted through 36 holes.
+              <strong>Missed cut:</strong> the golfer&apos;s 36-hole score
+              still counts.
             </li>
             <li>
-              <strong>Withdrawal (WD):</strong> if one of your golfers
-              withdraws mid-event, that golfer&apos;s score stops updating
-              and your entry continues with your other pick.
+              <strong>Withdrawal:</strong> the WD&apos;d golfer&apos;s score
+              freezes; your other pick keeps going.
             </li>
             <li>
-              <strong>Both picks out:</strong> if{" "}
-              <em>both</em> of your golfers miss the cut or withdraw, your
-              entry is marked <strong>DQ</strong> and is ineligible for a
-              payout.
+              <strong>Both out:</strong> if both of your picks miss the cut or
+              withdraw, your entry is <strong>DQ</strong>&apos;d and
+              can&apos;t cash.
             </li>
           </ul>
         </Section>
 
-        <Section
-          icon={<DollarSign className="h-5 w-5" />}
-          title="Payouts"
-        >
-          <p>
-            Payouts are distributed from the total pool based on how many
-            entrants joined the tournament. Payout tiers:
-          </p>
+        <Section icon={<DollarSign className="h-5 w-5" />} title="Payouts">
+          <p>The pool is split based on how many people entered:</p>
           <div className="mt-3 overflow-hidden rounded-lg border border-stone-200">
             <table className="min-w-full divide-y divide-stone-100 text-sm">
               <thead className="bg-cream-50 text-xs font-semibold uppercase tracking-wider text-stone-500">
@@ -188,8 +156,8 @@ export default function RulesPage() {
             </table>
           </div>
           <p className="mt-3 text-sm text-stone-500">
-            The exact payout for each place is shown on every tournament
-            detail page once entries are in.
+            Exact dollar amounts show up on each tournament page once entries
+            are in.
           </p>
         </Section>
 
@@ -199,33 +167,29 @@ export default function RulesPage() {
         >
           <ul className="ml-5 list-disc space-y-2">
             <li>
-              The <strong>Standings</strong> page tracks cumulative
-              performance across every completed tournament of the season.
+              The <strong>Standings</strong> page tracks every member across
+              every completed tournament.
             </li>
             <li>
-              You&apos;ll see total entries, total winnings, buy-ins, net
-              profit, best finish, and ROI for every member.
+              You&apos;ll see entries, winnings, buy-ins, net profit, best
+              finish, and ROI.
             </li>
             <li>
-              The top three on the season leaderboard get medal icons next
-              to their names for bragging rights.
+              The top three on the season board get medal icons for bragging
+              rights.
             </li>
           </ul>
         </Section>
 
-        <Section
-          icon={<Medal className="h-5 w-5" />}
-          title="Fair Play"
-        >
+        <Section icon={<Medal className="h-5 w-5" />} title="Fair Play">
           <ul className="ml-5 list-disc space-y-2">
-            <li>Enter before the draft starts — no late additions.</li>
+            <li>Enter before the draft starts. No late adds.</li>
             <li>
-              Make your picks promptly when it&apos;s your turn. Live drafts
-              can stall on a slow player.
+              Make your picks promptly. A live draft stalls on a slow player.
             </li>
             <li>
-              The commissioner has final say on any edge cases the rules
-              don&apos;t cover.
+              The commissioner has final say on anything the rules don&apos;t
+              cover.
             </li>
           </ul>
         </Section>
@@ -234,9 +198,8 @@ export default function RulesPage() {
           <CardContent className="flex items-start gap-3 p-5 text-sm text-stone-700">
             <Award className="mt-0.5 h-5 w-5 flex-shrink-0 text-gold-500" />
             <p>
-              Questions or disputes? Reach out to your commissioner — the
-              person who set up the pool can resolve any edge case and
-              adjust the board if needed.
+              Questions or disputes? Ask your commissioner — they can sort out
+              edge cases and adjust the board if needed.
             </p>
           </CardContent>
         </Card>
