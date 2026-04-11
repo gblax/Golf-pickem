@@ -4,6 +4,21 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { Plus } from "lucide-react";
+import {
+  Alert,
+  Button,
+  Card,
+  ConfirmDialog,
+  Input,
+  Label,
+  PageHeader,
+  Section,
+  Select,
+  Spinner,
+  StatusBadge,
+} from "@/components/ui";
+import { formatDate, formatScore } from "@/lib/utils";
 
 type Tournament = {
   id: string;
@@ -40,6 +55,8 @@ type AvailableUser = {
   email: string;
 };
 
+const STATUS_FLOW = ["UPCOMING", "DRAFT_OPEN", "IN_PROGRESS", "COMPLETE"];
+
 export default function ManageTournamentPage() {
   const params = useParams();
   const router = useRouter();
@@ -51,10 +68,16 @@ export default function ManageTournamentPage() {
   const [error, setError] = useState("");
   const [newGolferName, setNewGolferName] = useState("");
   const [draftMode, setDraftMode] = useState("LIVE");
-  const [espnEvents, setEspnEvents] = useState<{ id: string; name: string; startDate: string; endDate: string }[]>([]);
+  const [espnEvents, setEspnEvents] = useState<
+    { id: string; name: string; startDate: string; endDate: string }[]
+  >([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [finalizeOpen, setFinalizeOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
 
   const id = params.id as string;
 
@@ -90,7 +113,13 @@ export default function ManageTournamentPage() {
   }, [fetchTournament, fetchField, fetchEntries]);
 
   if (!session?.user?.isAdmin) {
-    return <div className="p-8 text-center">Access denied</div>;
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <h1 className="font-display text-xl font-bold text-stone-900">
+          Access denied
+        </h1>
+      </div>
+    );
   }
 
   async function updateStatus(newStatus: string) {
@@ -248,12 +277,7 @@ export default function ManageTournamentPage() {
   }
 
   async function deleteTournament() {
-    if (
-      !confirm(
-        `Delete "${tournament?.name}"? This will permanently remove all entries, picks, and draft data. This cannot be undone.`
-      )
-    )
-      return;
+    setDeleting(true);
     setError("");
     const res = await fetch(`/api/tournaments/${id}`, { method: "DELETE" });
     if (res.ok) {
@@ -261,13 +285,17 @@ export default function ManageTournamentPage() {
     } else {
       const data = await res.json();
       setError(data.error || "Failed to delete tournament");
+      setDeleting(false);
+      setDeleteOpen(false);
     }
   }
 
   async function finalize() {
-    if (!confirm("Finalize this tournament? This will calculate final standings and payouts.")) return;
+    setFinalizing(true);
     setError("");
-    const res = await fetch(`/api/tournaments/${id}/finalize`, { method: "POST" });
+    const res = await fetch(`/api/tournaments/${id}/finalize`, {
+      method: "POST",
+    });
     if (res.ok) {
       setMessage("Tournament finalized!");
       fetchTournament();
@@ -275,321 +303,384 @@ export default function ManageTournamentPage() {
       const data = await res.json();
       setError(data.error || "Failed to finalize");
     }
+    setFinalizing(false);
+    setFinalizeOpen(false);
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center py-24 text-emerald-600">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   if (!tournament) {
-    return <div className="p-8 text-center text-red-600">Tournament not found</div>;
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <h1 className="font-display text-xl font-bold text-stone-900">
+          Tournament not found
+        </h1>
+      </div>
+    );
   }
 
-  const statusFlow = ["UPCOMING", "DRAFT_OPEN", "IN_PROGRESS", "COMPLETE"];
-  const currentIdx = statusFlow.indexOf(tournament.status);
+  const currentIdx = STATUS_FLOW.indexOf(tournament.status);
+  const isUpcoming = tournament.status === "UPCOMING";
+  const isDraftOpen = tournament.status === "DRAFT_OPEN";
+  const isInProgress = tournament.status === "IN_PROGRESS";
+  const isComplete = tournament.status === "COMPLETE";
 
   return (
-    <div className="mx-auto max-w-4xl p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/admin" className="text-sm text-green-600 hover:underline">&larr; Back to Admin</Link>
-          <h1 className="text-2xl font-bold text-gray-900">{tournament.name}</h1>
-          <p className="text-sm text-gray-500">
-            {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
-          </p>
-        </div>
-        <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
-          {tournament.status}
-        </span>
-      </div>
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
+      <PageHeader
+        eyebrow={<StatusBadge status={tournament.status} />}
+        title={tournament.name}
+        subtitle={`${formatDate(tournament.startDate)} – ${formatDate(
+          tournament.endDate
+        )}`}
+        backHref="/admin"
+        backLabel="Admin dashboard"
+        actions={
+          <>
+            <Link href={`/tournaments/${id}`}>
+              <Button variant="secondary" size="sm">
+                View Page
+              </Button>
+            </Link>
+            {(isInProgress || isComplete) && (
+              <Link href={`/tournaments/${id}/leaderboard`}>
+                <Button variant="secondary" size="sm">
+                  Leaderboard
+                </Button>
+              </Link>
+            )}
+          </>
+        }
+      />
 
-      {message && <div className="rounded bg-green-50 p-3 text-sm text-green-700">{message}</div>}
-      {error && <div className="rounded bg-red-50 p-3 text-sm text-red-600">{error}</div>}
-
-      {/* Status Management */}
-      <section className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold mb-4">Status Management</h2>
-        <div className="flex flex-wrap gap-2">
-          {statusFlow.map((status, i) => (
-            <button
-              key={status}
-              onClick={() => updateStatus(status)}
-              disabled={i === currentIdx}
-              className={`rounded px-3 py-1.5 text-sm font-medium ${
-                i === currentIdx
-                  ? "bg-green-600 text-white"
-                  : i < currentIdx
-                    ? "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                    : "bg-green-100 text-green-700 hover:bg-green-200"
-              }`}
-            >
-              {status.replace(/_/g, " ")}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Entries */}
-      <section className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold mb-4">
-          Entries ({entries.length})
-        </h2>
-
-        {(tournament.status === "UPCOMING" || tournament.status === "DRAFT_OPEN") && (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="rounded border px-3 py-1.5 text-sm"
-            >
-              <option value="">Select a user to opt in...</option>
-              {availableUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.email})
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={optInUser}
-              disabled={!selectedUserId}
-              className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Opt In
-            </button>
-          </div>
+      <div className="space-y-4">
+        {message && (
+          <Alert variant="success" onDismiss={() => setMessage("")}>
+            {message}
+          </Alert>
+        )}
+        {error && (
+          <Alert variant="error" onDismiss={() => setError("")}>
+            {error}
+          </Alert>
         )}
 
-        {entries.length === 0 ? (
-          <p className="text-sm text-gray-500">No entries yet.</p>
-        ) : (
-          <ul className="divide-y divide-gray-100 text-sm">
-            {entries.map((e) => (
-              <li key={e.id} className="flex items-center justify-between py-2">
-                <span className="font-medium text-gray-900">{e.userName}</span>
-                <span className="text-gray-500">{e.userEmail}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Field Management */}
-      <section className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold mb-4">
-          Field ({field.length} golfers)
-        </h2>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {tournament.externalId && (
-            <button
-              onClick={importFromEspn}
-              className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
-            >
-              Import Field from ESPN
-            </button>
-          )}
-          {!tournament.externalId && (
-            <button
-              onClick={fetchEspnEvents}
-              className="rounded bg-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-300"
-            >
-              Browse ESPN Events
-            </button>
-          )}
-        </div>
-
-        {espnEvents.length > 0 && (
-          <div className="mb-4 max-h-48 overflow-y-auto rounded border p-2 space-y-1">
-            {espnEvents.map((evt) => (
-              <button
-                key={evt.id}
-                onClick={async () => {
-                  await fetch(`/api/tournaments/${id}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ externalId: evt.id }),
-                  });
-                  setEspnEvents([]);
-                  fetchTournament();
-                  setMessage(`Linked to ESPN event: ${evt.name}`);
-                }}
-                className="block w-full text-left rounded p-2 hover:bg-gray-100 text-sm"
+        <Section title="Status">
+          <div className="flex flex-wrap gap-2">
+            {STATUS_FLOW.map((status, i) => (
+              <Button
+                key={status}
+                size="sm"
+                variant={
+                  i === currentIdx
+                    ? "primary"
+                    : i < currentIdx
+                      ? "ghost"
+                      : "secondary"
+                }
+                onClick={() => updateStatus(status)}
+                disabled={i === currentIdx}
               >
-                {evt.name} ({new Date(evt.startDate).toLocaleDateString()})
-              </button>
+                {status.replace(/_/g, " ")}
+              </Button>
             ))}
           </div>
-        )}
+        </Section>
 
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={newGolferName}
-            onChange={(e) => setNewGolferName(e.target.value)}
-            placeholder="Add golfer name..."
-            className="flex-1 rounded border px-3 py-1.5 text-sm"
-            onKeyDown={(e) => e.key === "Enter" && addGolfer()}
-          />
-          <button
-            onClick={addGolfer}
-            className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700"
-          >
-            Add
-          </button>
-        </div>
-
-        {field.length > 0 && (
-          <div className="max-h-64 overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left">Golfer</th>
-                  <th className="px-3 py-2 text-center">Score</th>
-                  <th className="px-3 py-2 text-center">Position</th>
-                  <th className="px-3 py-2 text-center">Cut</th>
-                </tr>
-              </thead>
-              <tbody>
-                {field.map((tg) => (
-                  <tr key={tg.id} className="border-t">
-                    <td className="px-3 py-1.5">{tg.golfer.name}</td>
-                    <td className="px-3 py-1.5 text-center">
-                      {tg.scoreToPar === null ? "-" : tg.scoreToPar === 0 ? "E" : tg.scoreToPar > 0 ? `+${tg.scoreToPar}` : tg.scoreToPar}
-                    </td>
-                    <td className="px-3 py-1.5 text-center">{tg.position || "-"}</td>
-                    <td className="px-3 py-1.5 text-center">
-                      {tg.madeTheCut === null ? "-" : tg.madeTheCut ? "Made" : "MC"}
-                      {tg.isWithdrawn && " (WD)"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Draft Management */}
-      {["DRAFT_OPEN", "IN_PROGRESS", "COMPLETE"].includes(tournament.status) && (
-        <section className="rounded-lg bg-white p-6 shadow">
-          <h2 className="text-lg font-semibold mb-4">
-            Draft ({tournament._count.entries} players entered)
-          </h2>
-          {!tournament.draft ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium">Mode:</label>
-                <select
-                  value={draftMode}
-                  onChange={(e) => setDraftMode(e.target.value)}
-                  className="rounded border px-2 py-1 text-sm"
+        <Section
+          title="Entries"
+          description={`${entries.length} ${entries.length === 1 ? "player" : "players"}`}
+          defaultOpen={!isComplete}
+        >
+          {(isUpcoming || isDraftOpen) && (
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <Label htmlFor="opt-in-user">Opt in an existing user</Label>
+                <Select
+                  id="opt-in-user"
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
                 >
-                  <option value="LIVE">Live (everyone online)</option>
-                  <option value="ASYNC">Async (pick when ready)</option>
-                </select>
+                  <option value="">Select a user…</option>
+                  {availableUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.email})
+                    </option>
+                  ))}
+                </Select>
               </div>
-              <button
-                onClick={createDraft}
-                className="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
+              <Button
+                onClick={optInUser}
+                disabled={!selectedUserId}
+                variant="primary"
               >
-                Create Draft
-              </button>
+                Opt In
+              </Button>
             </div>
+          )}
+
+          {entries.length === 0 ? (
+            <p className="text-sm text-stone-500">No entries yet.</p>
           ) : (
-            <div className="space-y-3">
-              <p className="text-sm">
-                Draft Status: <strong>{tournament.draft.status}</strong> ({tournament.draft.mode} mode)
-              </p>
-              {tournament.draft.status === "PENDING" && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={randomizeOrder}
-                    className="rounded bg-yellow-500 px-3 py-1.5 text-sm text-white hover:bg-yellow-600"
-                  >
-                    Randomize Order
-                  </button>
-                  <button
-                    onClick={startDraft}
-                    className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700"
-                  >
-                    Start Draft
-                  </button>
-                </div>
+            <ul className="divide-y divide-stone-100 text-sm">
+              {entries.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <span className="font-medium text-stone-900">
+                    {e.userName}
+                  </span>
+                  <span className="text-stone-500">{e.userEmail}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        {!isComplete && (
+          <Section
+            title="Field"
+            description={`${field.length} golfers`}
+            defaultOpen={!isInProgress}
+          >
+            <div className="mb-4 flex flex-wrap gap-2">
+              {tournament.externalId ? (
+                <Button size="sm" variant="secondary" onClick={importFromEspn}>
+                  Import Field from ESPN
+                </Button>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={fetchEspnEvents}>
+                  Browse ESPN Events
+                </Button>
               )}
-              <Link
-                href={`/tournaments/${id}/draft`}
-                className="inline-block rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
-              >
-                Open Draft Room
+            </div>
+
+            {espnEvents.length > 0 && (
+              <Card className="mb-4 max-h-48 overflow-y-auto">
+                <div className="divide-y divide-stone-100">
+                  {espnEvents.map((evt) => (
+                    <button
+                      key={evt.id}
+                      type="button"
+                      onClick={async () => {
+                        await fetch(`/api/tournaments/${id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ externalId: evt.id }),
+                        });
+                        setEspnEvents([]);
+                        fetchTournament();
+                        setMessage(`Linked to ESPN event: ${evt.name}`);
+                      }}
+                      className="block w-full cursor-pointer px-4 py-2 text-left text-sm hover:bg-cream-50"
+                    >
+                      <span className="font-medium text-stone-900">
+                        {evt.name}
+                      </span>
+                      <span className="ml-2 text-stone-500">
+                        {new Date(evt.startDate).toLocaleDateString()}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            <div className="mb-4 flex gap-2">
+              <Input
+                type="text"
+                value={newGolferName}
+                onChange={(e) => setNewGolferName(e.target.value)}
+                placeholder="Add golfer name…"
+                className="flex-1"
+                onKeyDown={(e) => e.key === "Enter" && addGolfer()}
+              />
+              <Button onClick={addGolfer} variant="primary">
+                <Plus className="h-4 w-4" />
+                Add
+              </Button>
+            </div>
+
+            {field.length > 0 && (
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-stone-100">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-cream-50">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+                      <th className="px-3 py-2">Golfer</th>
+                      <th className="px-3 py-2 text-center">Score</th>
+                      <th className="px-3 py-2 text-center">Position</th>
+                      <th className="px-3 py-2 text-center">Cut</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {field.map((tg) => (
+                      <tr key={tg.id}>
+                        <td className="px-3 py-1.5 text-stone-900">
+                          {tg.golfer.name}
+                          {tg.isWithdrawn && (
+                            <span className="ml-2 text-xs text-rose-500">
+                              WD
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5 text-center tabular-nums">
+                          {formatScore(tg.scoreToPar)}
+                        </td>
+                        <td className="px-3 py-1.5 text-center text-stone-600">
+                          {tg.position || "—"}
+                        </td>
+                        <td className="px-3 py-1.5 text-center text-stone-600">
+                          {tg.madeTheCut === null
+                            ? "—"
+                            : tg.madeTheCut
+                              ? "Made"
+                              : "MC"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+        )}
+
+        {(isDraftOpen || isInProgress || isComplete) && (
+          <Section
+            title="Draft"
+            description={`${tournament._count.entries} players entered`}
+            defaultOpen={isDraftOpen}
+          >
+            {!tournament.draft ? (
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="draft-mode">Mode</Label>
+                  <Select
+                    id="draft-mode"
+                    value={draftMode}
+                    onChange={(e) => setDraftMode(e.target.value)}
+                  >
+                    <option value="LIVE">Live (everyone online)</option>
+                    <option value="ASYNC">Async (pick when ready)</option>
+                  </Select>
+                </div>
+                <Button onClick={createDraft} variant="primary">
+                  Create Draft
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-stone-600">
+                  Status:{" "}
+                  <StatusBadge status={tournament.draft.status} />{" "}
+                  <span className="ml-1 text-stone-400">
+                    · {tournament.draft.mode} mode
+                  </span>
+                </p>
+                {tournament.draft.status === "PENDING" && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="gold"
+                      onClick={randomizeOrder}
+                    >
+                      Randomize Order
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={startDraft}
+                    >
+                      Start Draft
+                    </Button>
+                  </div>
+                )}
+                <Link href={`/tournaments/${id}/draft`}>
+                  <Button size="sm" variant="secondary">
+                    Open Draft Room
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </Section>
+        )}
+
+        {isInProgress && (
+          <Section title="Scores">
+            <div className="flex flex-wrap gap-2">
+              {tournament.externalId && (
+                <Button variant="primary" onClick={fetchScores}>
+                  Fetch Scores from ESPN
+                </Button>
+              )}
+              <Link href={`/tournaments/${id}/leaderboard`}>
+                <Button variant="secondary">View Leaderboard</Button>
               </Link>
             </div>
-          )}
-        </section>
-      )}
+          </Section>
+        )}
 
-      {/* Score Management */}
-      {tournament.status === "IN_PROGRESS" && (
-        <section className="rounded-lg bg-white p-6 shadow">
-          <h2 className="text-lg font-semibold mb-4">Scores</h2>
-          <div className="flex flex-wrap gap-2">
-            {tournament.externalId && (
-              <button
-                onClick={fetchScores}
-                className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
-              >
-                Fetch Scores from ESPN
-              </button>
-            )}
-            <Link
-              href={`/tournaments/${id}/leaderboard`}
-              className="rounded bg-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-300"
-            >
-              View Leaderboard
-            </Link>
+        {isInProgress && (
+          <Section title="Finalize Tournament">
+            <p className="mb-3 text-sm text-stone-600">
+              This calculates final standings and payouts based on current
+              scores. It cannot be undone.
+            </p>
+            <Button variant="danger" onClick={() => setFinalizeOpen(true)}>
+              Finalize Tournament
+            </Button>
+          </Section>
+        )}
+
+        <section className="rounded-xl border border-rose-200 bg-rose-50 p-5">
+          <h2 className="font-display text-lg font-semibold text-rose-700">
+            Danger Zone
+          </h2>
+          <p className="mt-1 text-sm text-rose-700">
+            Deleting this tournament permanently removes all entries, picks, and
+            draft data. This cannot be undone.
+          </p>
+          <div className="mt-3">
+            <Button variant="danger" onClick={() => setDeleteOpen(true)}>
+              Delete Tournament
+            </Button>
           </div>
         </section>
-      )}
-
-      {/* Finalize */}
-      {tournament.status === "IN_PROGRESS" && (
-        <section className="rounded-lg bg-white p-6 shadow">
-          <h2 className="text-lg font-semibold mb-4">Finalize Tournament</h2>
-          <p className="text-sm text-gray-600 mb-3">
-            This will calculate final standings and payouts based on current scores.
-          </p>
-          <button
-            onClick={finalize}
-            className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
-          >
-            Finalize Tournament
-          </button>
-        </section>
-      )}
-
-      {/* Quick Links */}
-      <div className="flex gap-3 text-sm">
-        <Link href={`/tournaments/${id}`} className="text-green-600 hover:underline">
-          View Tournament Page
-        </Link>
-        <Link href={`/tournaments/${id}/leaderboard`} className="text-green-600 hover:underline">
-          Leaderboard
-        </Link>
       </div>
 
-      {/* Danger Zone */}
-      <section className="rounded-lg border border-red-200 bg-red-50 p-6">
-        <h2 className="text-lg font-semibold text-red-700 mb-2">Danger Zone</h2>
-        <p className="text-sm text-red-700 mb-3">
-          Deleting this tournament will permanently remove all entries, picks,
-          and draft data. This cannot be undone.
-        </p>
-        <button
-          onClick={deleteTournament}
-          className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-        >
-          Delete Tournament
-        </button>
-      </section>
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Delete tournament?"
+        description={
+          <>
+            Delete <strong>{tournament.name}</strong>? This will permanently
+            remove all entries, picks, and draft data. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={deleteTournament}
+        onCancel={() => setDeleteOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={finalizeOpen}
+        title="Finalize tournament?"
+        description="This will calculate final standings and payouts based on current scores. This cannot be undone."
+        confirmLabel="Finalize"
+        variant="danger"
+        loading={finalizing}
+        onConfirm={finalize}
+        onCancel={() => setFinalizeOpen(false)}
+      />
     </div>
   );
 }

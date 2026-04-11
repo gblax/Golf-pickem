@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import {
+  Button,
+  Card,
+  CardContent,
+  Alert,
+  Spinner,
+} from "@/components/ui";
 
 interface Tournament {
   id: string;
@@ -30,7 +37,7 @@ function formatDate(date: string): string {
 export default function EnterTournamentPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { data: session, status: sessionStatus } = useSession();
+  const { status: sessionStatus } = useSession();
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -85,8 +92,8 @@ export default function EnterTournamentPage() {
 
   if (loading || sessionStatus === "loading") {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
+      <div className="flex items-center justify-center py-24 text-emerald-600">
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -94,13 +101,15 @@ export default function EnterTournamentPage() {
   if (!tournament) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <h1 className="text-xl font-bold text-gray-900">Tournament Not Found</h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <h1 className="font-display text-xl font-bold text-stone-900">
+          Tournament Not Found
+        </h1>
+        <p className="mt-2 text-sm text-stone-500">
           This tournament doesn&apos;t exist or has been removed.
         </p>
         <Link
           href="/tournaments"
-          className="mt-4 inline-block text-sm text-green-600 hover:text-green-700 hover:underline"
+          className="mt-4 inline-block text-sm text-emerald-700 hover:text-emerald-800 hover:underline"
         >
           Back to Tournaments
         </Link>
@@ -110,58 +119,59 @@ export default function EnterTournamentPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-12">
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">
-          Confirm Entry
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          You are about to enter the following tournament.
-        </p>
+      <Card accent="gold">
+        <CardContent className="p-6">
+          <h1 className="font-display text-2xl font-semibold text-stone-900">
+            Confirm Entry
+          </h1>
+          <p className="mt-1 text-sm text-stone-500">
+            You are about to enter the following tournament.
+          </p>
 
-        <div className="mt-6 space-y-3 rounded-md bg-gray-50 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">Tournament</span>
-            <span className="text-sm font-semibold text-gray-900">
-              {tournament.name}
-            </span>
+          <div className="mt-6 space-y-3 rounded-lg border border-stone-200 bg-cream-50 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-stone-500">Tournament</span>
+              <span className="text-sm font-semibold text-stone-900">
+                {tournament.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-stone-500">Dates</span>
+              <span className="text-sm text-stone-700">
+                {formatDate(tournament.startDate)} &ndash;{" "}
+                {formatDate(tournament.endDate)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-t border-stone-200 pt-3">
+              <span className="text-sm font-medium text-stone-700">Buy-in</span>
+              <span className="font-display text-xl font-bold text-gold-600">
+                {formatCurrency(tournament.buyIn)}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">Dates</span>
-            <span className="text-sm text-gray-700">
-              {formatDate(tournament.startDate)} &ndash;{" "}
-              {formatDate(tournament.endDate)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-            <span className="text-sm font-medium text-gray-700">Buy-in</span>
-            <span className="text-lg font-bold text-green-700">
-              {formatCurrency(tournament.buyIn)}
-            </span>
-          </div>
-        </div>
 
-        {error && (
-          <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+          {error && (
+            <Alert variant="error" className="mt-4">
+              {error}
+            </Alert>
+          )}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Link
-            href={`/tournaments/${tournamentId}`}
-            className="rounded-md border border-gray-300 px-4 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </Link>
-          <button
-            onClick={handleConfirmEntry}
-            disabled={submitting}
-            className="rounded-md bg-green-600 px-6 py-2 text-sm font-semibold text-white shadow hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {submitting ? "Entering..." : "Confirm Entry"}
-          </button>
-        </div>
-      </div>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Link href={`/tournaments/${tournamentId}`}>
+              <Button variant="secondary" className="w-full sm:w-auto">
+                Cancel
+              </Button>
+            </Link>
+            <Button
+              onClick={handleConfirmEntry}
+              loading={submitting}
+              className="w-full sm:w-auto"
+            >
+              {submitting ? "Entering..." : "Confirm Entry"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

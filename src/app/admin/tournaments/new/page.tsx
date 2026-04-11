@@ -4,6 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Label,
+  PageHeader,
+  Spinner,
+} from "@/components/ui";
 
 interface ESPNTournament {
   id: string;
@@ -32,8 +42,8 @@ export default function NewTournamentPage() {
 
   if (sessionStatus === "loading") {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="flex items-center justify-center py-24 text-emerald-600">
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -103,182 +113,147 @@ export default function NewTournamentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-6">
-        <Link
-          href="/admin"
-          className="text-sm text-green-600 hover:text-green-700 hover:underline"
-        >
-          &larr; Back to Admin
-        </Link>
-      </div>
-
-      <h1 className="mb-8 text-2xl font-bold text-gray-900">
-        Create Tournament
-      </h1>
-
-      {/* ESPN Import */}
-      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Import from ESPN
-        </h2>
-        <p className="mb-4 text-sm text-gray-500">
-          Fetch upcoming PGA Tour events to auto-fill tournament details.
-        </p>
-        <button
-          type="button"
-          onClick={handleImportFromESPN}
-          disabled={loadingEspn}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loadingEspn ? "Loading..." : "Import from ESPN"}
-        </button>
-
-        {espnError && (
-          <p className="mt-3 text-sm text-red-600">{espnError}</p>
-        )}
-
-        {espnEvents.length > 0 && (
-          <div className="mt-4 max-h-64 overflow-y-auto rounded border border-gray-200">
-            {espnEvents.map((event) => (
-              <button
-                key={event.id}
-                type="button"
-                onClick={() => selectESPNEvent(event)}
-                className="flex w-full items-center justify-between border-b border-gray-100 px-4 py-3 text-left text-sm hover:bg-green-50 last:border-b-0"
-              >
-                <span className="font-medium text-gray-900">{event.name}</span>
-                <span className="text-gray-500">
-                  {event.startDate.split("T")[0]}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-10">
+      <PageHeader
+        eyebrow="Admin"
+        title="Create Tournament"
+        backHref="/admin"
+        backLabel="Admin dashboard"
+      />
 
       {/* Tournament form */}
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-      >
-        <h2 className="mb-5 text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Tournament Details
-        </h2>
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="mb-5 text-xs font-semibold uppercase tracking-wider text-stone-500">
+            Tournament Details
+          </h2>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <Alert variant="error">{error}</Alert>}
 
-        <div className="mb-4">
-          <label
-            htmlFor="name"
-            className="mb-1 block text-sm font-medium text-gray-700"
+            <div>
+              <Label htmlFor="name">Tournament Name</Label>
+              <Input
+                id="name"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. The Masters"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  required
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  required
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="buyIn">Buy-in Amount ($)</Label>
+              <Input
+                id="buyIn"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={buyIn}
+                onChange={(e) => setBuyIn(e.target.value)}
+                placeholder="50"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="externalId">
+                ESPN Event ID{" "}
+                <span className="font-normal text-stone-400">(optional)</span>
+              </Label>
+              <Input
+                id="externalId"
+                type="text"
+                value={externalId}
+                onChange={(e) => setExternalId(e.target.value)}
+                placeholder="e.g. 401580344"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button type="submit" variant="primary" loading={submitting}>
+                {submitting ? "Creating..." : "Create Tournament"}
+              </Button>
+              <Link href="/admin">
+                <Button type="button" variant="secondary">
+                  Cancel
+                </Button>
+              </Link>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* ESPN Import helper */}
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+            Import from ESPN
+          </h2>
+          <p className="mt-1 mb-4 text-sm text-stone-500">
+            Fetch upcoming PGA Tour events to auto-fill tournament details.
+          </p>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleImportFromESPN}
+            loading={loadingEspn}
           >
-            Tournament Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-            placeholder="e.g. The Masters"
-          />
-        </div>
+            {loadingEspn ? "Loading..." : "Browse ESPN Events"}
+          </Button>
 
-        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="startDate"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Start Date
-            </label>
-            <input
-              id="startDate"
-              type="date"
-              required
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="endDate"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              End Date
-            </label>
-            <input
-              id="endDate"
-              type="date"
-              required
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-            />
-          </div>
-        </div>
+          {espnError && (
+            <Alert variant="error" className="mt-3">
+              {espnError}
+            </Alert>
+          )}
 
-        <div className="mb-4">
-          <label
-            htmlFor="buyIn"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            Buy-in Amount ($)
-          </label>
-          <input
-            id="buyIn"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            value={buyIn}
-            onChange={(e) => setBuyIn(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-            placeholder="50"
-          />
-        </div>
-
-        <div className="mb-6">
-          <label
-            htmlFor="externalId"
-            className="mb-1 block text-sm font-medium text-gray-700"
-          >
-            ESPN Event ID{" "}
-            <span className="font-normal text-gray-400">(optional)</span>
-          </label>
-          <input
-            id="externalId"
-            type="text"
-            value={externalId}
-            onChange={(e) => setExternalId(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-            placeholder="e.g. 401580344"
-          />
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          >
-            {submitting ? "Creating..." : "Create Tournament"}
-          </button>
-          <Link
-            href="/admin"
-            className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </Link>
-        </div>
-      </form>
+          {espnEvents.length > 0 && (
+            <div className="mt-4 max-h-64 overflow-y-auto rounded-lg border border-stone-200 divide-y divide-stone-100">
+              {espnEvents.map((event) => (
+                <button
+                  key={event.id}
+                  type="button"
+                  onClick={() => selectESPNEvent(event)}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-cream-50"
+                >
+                  <span className="font-medium text-stone-900">
+                    {event.name}
+                  </span>
+                  <span className="text-stone-500">
+                    {event.startDate.split("T")[0]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

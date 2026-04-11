@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui";
 
 export default function SyncScheduleButton() {
   const router = useRouter();
@@ -33,20 +35,17 @@ export default function SyncScheduleButton() {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
+      <Button
         type="button"
+        variant="secondary"
         onClick={handleSync}
-        disabled={loading}
-        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+        loading={loading}
       >
+        {!loading && <RefreshCw className="h-4 w-4" />}
         {loading ? "Syncing..." : "Sync PGA Schedule"}
-      </button>
-      {message && (
-        <p className="text-xs text-green-700">{message}</p>
-      )}
-      {error && (
-        <p className="text-xs text-red-600">{error}</p>
-      )}
+      </Button>
+      {message && <p className="text-xs text-emerald-700">{message}</p>}
+      {error && <p className="text-xs text-rose-600">{error}</p>}
     </div>
   );
 }

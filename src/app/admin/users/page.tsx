@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { Avatar, Badge, Card, PageHeader } from "@/components/ui";
 import UserRowActions from "./UserRowActions";
 
 export default async function AdminUsersPage() {
@@ -20,47 +20,65 @@ export default async function AdminUsersPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      <Link href="/admin" className="text-sm text-green-600 hover:underline">&larr; Back to Admin</Link>
-      <h1 className="text-2xl font-bold text-gray-900 mt-2 mb-6">Manage Users</h1>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+      <PageHeader
+        eyebrow="Admin"
+        title="Users"
+        subtitle={`${users.length} ${users.length === 1 ? "member" : "members"}`}
+        backHref="/admin"
+        backLabel="Admin dashboard"
+      />
 
-      <div className="rounded-lg bg-white shadow overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-700">Admin</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-700">Entries</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Joined</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-700">Actions</th>
+          <table className="min-w-full divide-y divide-stone-100 text-sm">
+            <thead className="bg-cream-50">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3 text-center">Role</th>
+                <th className="px-4 py-3 text-center">Entries</th>
+                <th className="px-4 py-3">Joined</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-stone-100">
               {users.map((user) => (
-                <tr key={user.id} className="border-t">
-                  <td className="px-4 py-3 font-medium">
-                    {user.name}
-                    {user.id === currentUserId && (
-                      <span className="ml-2 text-xs text-gray-400">(you)</span>
-                    )}
+                <tr key={user.id} className="hover:bg-cream-50">
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={user.name} seed={user.id} size="sm" />
+                      <div>
+                        <span className="font-medium text-stone-900">
+                          {user.name}
+                        </span>
+                        {user.id === currentUserId && (
+                          <span className="ml-2 text-xs text-stone-400">
+                            (you)
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{user.email}</td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="whitespace-nowrap px-4 py-3 text-stone-600">
+                    {user.email}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-center">
                     {user.isAdmin ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      <Badge variant="emerald" size="sm">
                         Admin
-                      </span>
+                      </Badge>
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <span className="text-stone-400">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-center">{user._count.entries}</td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-center tabular-nums text-stone-600">
+                    {user._count.entries}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-stone-600">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     <UserRowActions
                       userId={user.id}
                       isAdmin={user.isAdmin}
@@ -73,7 +91,7 @@ export default async function AdminUsersPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

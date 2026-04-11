@@ -1,11 +1,77 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9fafb;
-  --foreground: #111827;
+  --background: #faf8f2;
+  --foreground: #1c1917;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Masters-inspired emerald (primary) — centered on #006747 */
+  --color-emerald-50: #f0f8f4;
+  --color-emerald-100: #d9ede0;
+  --color-emerald-200: #b0dcc1;
+  --color-emerald-300: #80c4a1;
+  --color-emerald-400: #4fa47f;
+  --color-emerald-500: #1e8560;
+  --color-emerald-600: #006747;
+  --color-emerald-700: #00553a;
+  --color-emerald-800: #003f2b;
+  --color-emerald-900: #002a1c;
+  --color-emerald-950: #001810;
+
+  /* Warm cream backgrounds (replaces gray-50) */
+  --color-cream-50: #faf8f2;
+  --color-cream-100: #f5efe0;
+  --color-cream-200: #efe7d2;
+  --color-cream-300: #e5dbba;
+  --color-cream-400: #d6c795;
+
+  /* Gold accent for winners, medals, hero strips (use sparingly) */
+  --color-gold-50: #fdf8e8;
+  --color-gold-100: #faedc0;
+  --color-gold-200: #f4dc8a;
+  --color-gold-300: #e9c25b;
+  --color-gold-400: #c9a449;
+  --color-gold-500: #a8852a;
+  --color-gold-600: #886a1c;
+  --color-gold-700: #6b5216;
+
+  /* Warm stones (text + borders) */
+  --color-stone-50: #faf9f5;
+  --color-stone-100: #f1ede3;
+  --color-stone-200: #e3ddcd;
+  --color-stone-300: #c9c1ab;
+  --color-stone-400: #a39a82;
+  --color-stone-500: #78715d;
+  --color-stone-600: #5a5448;
+  --color-stone-700: #3f3a31;
+  --color-stone-800: #2a2620;
+  --color-stone-900: #1c1917;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+}
+
+body {
+  background: var(--color-cream-50);
+  color: var(--color-stone-900);
+}
+
+/* Subtle golden pulse used for the "on the clock" banner when time is low */
+@keyframes gold-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(201, 164, 73, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(201, 164, 73, 0);
+  }
+}
+
+.animate-gold-pulse {
+  animation: gold-pulse 1.6s ease-out infinite;
 }

@@ -1,13 +1,21 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { Trophy, Users, CalendarDays } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import {
   formatCurrency,
   formatDate,
-  cn,
   sortTournamentsByRelevance,
 } from "@/lib/utils";
-import Link from "next/link";
+import { TOURNAMENT_STATUS } from "@/types";
+import {
+  Card,
+  CardContent,
+  StatusBadge,
+  PageHeader,
+  EmptyState,
+} from "@/components/ui";
 
 export default async function TournamentsPage() {
   const all = await prisma.tournament.findMany({
@@ -18,73 +26,70 @@ export default async function TournamentsPage() {
   const tournaments = sortTournamentsByRelevance(all).slice(0, 10);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900">Tournaments</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Browse all tournaments, past and upcoming.
-      </p>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+      <PageHeader
+        eyebrow="Schedule"
+        title="Tournaments"
+        subtitle="Browse upcoming, live, and past events"
+      />
 
       {tournaments.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-gray-500">No tournaments yet.</p>
-        </div>
+        <Card>
+          <EmptyState
+            icon={<Trophy className="h-6 w-6" />}
+            title="No tournaments yet"
+            description="Check back soon — or ask your commissioner to create one."
+          />
+        </Card>
       ) : (
-        <div className="mt-6 space-y-4">
-          {tournaments.map((tournament) => (
-            <Link
-              key={tournament.id}
-              href={`/tournaments/${tournament.id}`}
-              className="block rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-green-300 hover:shadow"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {tournament.name}
-                    </h2>
-                    <StatusBadge status={tournament.status} />
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {formatDate(tournament.startDate)} &ndash;{" "}
-                    {formatDate(tournament.endDate)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span>Buy-in: {formatCurrency(tournament.buyIn)}</span>
-                  <span>{tournament._count.entries} entries</span>
-                </div>
-              </div>
-            </Link>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {tournaments.map((tournament) => {
+            const isActive =
+              tournament.status === TOURNAMENT_STATUS.IN_PROGRESS ||
+              tournament.status === TOURNAMENT_STATUS.DRAFT_OPEN;
+            const isComplete =
+              tournament.status === TOURNAMENT_STATUS.COMPLETE;
+            return (
+              <Link
+                key={tournament.id}
+                href={`/tournaments/${tournament.id}`}
+                className="group block"
+              >
+                <Card
+                  interactive
+                  accent={isActive ? "gold" : "none"}
+                  className={isComplete ? "opacity-80" : ""}
+                >
+                  <CardContent className="flex min-h-[140px] flex-col justify-between gap-4 p-5">
+                    <div>
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <h2 className="font-display text-xl font-semibold leading-tight text-stone-900 group-hover:text-emerald-700">
+                          {tournament.name}
+                        </h2>
+                        <StatusBadge status={tournament.status} />
+                      </div>
+                      <p className="flex items-center gap-1.5 text-sm text-stone-500">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {formatDate(tournament.startDate)} &ndash;{" "}
+                        {formatDate(tournament.endDate)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 border-t border-stone-100 pt-3 text-sm text-stone-600">
+                      <span className="font-medium text-stone-900">
+                        {formatCurrency(tournament.buyIn)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5 text-stone-400" />
+                        {tournament._count.entries} entered
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    UPCOMING: "bg-blue-100 text-blue-700",
-    DRAFT_OPEN: "bg-yellow-100 text-yellow-700",
-    IN_PROGRESS: "bg-green-100 text-green-700",
-    COMPLETE: "bg-gray-100 text-gray-600",
-  };
-
-  const labels: Record<string, string> = {
-    UPCOMING: "Upcoming",
-    DRAFT_OPEN: "Draft Open",
-    IN_PROGRESS: "In Progress",
-    COMPLETE: "Complete",
-  };
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-        colors[status] || "bg-gray-100 text-gray-600"
-      )}
-    >
-      {labels[status] || status}
-    </span>
   );
 }

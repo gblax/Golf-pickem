@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import Link from "next/link";
+import { Button, Input, Label, Alert, Card, CardContent } from "@/components/ui";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -31,58 +32,86 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">
-          Sign In
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded bg-red-50 p-3 text-sm text-red-600">
-              {error}
+    <div className="relative flex min-h-[calc(100vh-4rem-88px)] items-center justify-center overflow-hidden px-4 py-16">
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-b from-cream-50 to-emerald-50"
+      />
+      <div
+        aria-hidden
+        className="absolute left-[-120px] top-[-120px] h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl"
+      />
+      <Card className="relative w-full max-w-md">
+        <CardContent className="p-8">
+          <div className="mb-6 text-center">
+            <div
+              aria-hidden
+              className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none">
+                <path
+                  d="M6 3v18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M6 4l10 3-10 3"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+                <circle cx="6" cy="21" r="1.5" fill="currentColor" />
+              </svg>
             </div>
-          )}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-            />
+            <h1 className="font-display text-2xl font-semibold text-stone-900">
+              Welcome back
+            </h1>
+            <p className="mt-1 text-sm text-stone-500">
+              Sign in to your Golf Pick&apos;em account
+            </p>
           </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-green-600 px-4 py-2 text-white font-medium hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-green-600 hover:text-green-700 font-medium">
-            Register
-          </Link>
-        </p>
-      </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <Alert variant="error">{error}</Alert>}
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+            <Button type="submit" loading={loading} fullWidth size="lg">
+              {loading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+          <p className="mt-6 text-center text-sm text-stone-500">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-emerald-700 hover:text-emerald-800"
+            >
+              Register
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

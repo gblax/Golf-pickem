@@ -3,6 +3,17 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, Trophy } from "lucide-react";
+import {
+  Alert,
+  Badge,
+  Card,
+  CardContent,
+  EmptyState,
+  MedalBadge,
+  Spinner,
+} from "@/components/ui";
+import { cn, formatCurrency, formatScore } from "@/lib/utils";
 
 interface LeaderboardPick {
   golferName: string;
@@ -26,22 +37,6 @@ interface LeaderboardEntry {
 interface PayoutSlot {
   place: number;
   payout: number;
-}
-
-function formatScore(scoreToPar: number | null): string {
-  if (scoreToPar === null) return "-";
-  if (scoreToPar === 0) return "E";
-  if (scoreToPar > 0) return `+${scoreToPar}`;
-  return String(scoreToPar);
-}
-
-function formatCurrency(cents: number): string {
-  const dollars = cents / 100;
-  return `$${dollars.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-function cn(...classes: (string | false | null | undefined)[]): string {
-  return classes.filter(Boolean).join(" ");
 }
 
 function getPayoutStructure(entryCount: number, buyIn: number): PayoutSlot[] {
@@ -69,6 +64,32 @@ function getPayoutStructure(entryCount: number, buyIn: number): PayoutSlot[] {
 
 const REFRESH_INTERVAL = 60;
 
+function ScoreSpan({ score }: { score: number | null }) {
+  if (score === null) return <span className="text-stone-400">—</span>;
+  return (
+    <span
+      className={cn(
+        "font-medium tabular-nums",
+        score < 0 && "text-rose-600",
+        score === 0 && "text-emerald-700",
+        score > 0 && "text-stone-500"
+      )}
+    >
+      {formatScore(score)}
+    </span>
+  );
+}
+
+function PickCell({ pick }: { pick: LeaderboardPick | undefined }) {
+  if (!pick) return <span className="text-stone-400">—</span>;
+  return (
+    <span>
+      <span className="text-stone-700">{pick.golferName}</span>{" "}
+      <ScoreSpan score={pick.scoreToPar} />
+    </span>
+  );
+}
+
 export default function LeaderboardPage() {
   const params = useParams<{ id: string }>();
   const tournamentId = params.id;
@@ -76,7 +97,11 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
-  const [tournament, setTournament] = useState<{ name: string; buyIn: number; status: string } | null>(null);
+  const [tournament, setTournament] = useState<{
+    name: string;
+    buyIn: number;
+    status: string;
+  } | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchLeaderboard = useCallback(async () => {
@@ -98,7 +123,11 @@ export default function LeaderboardPage() {
       const res = await fetch(`/api/tournaments/${tournamentId}`);
       if (res.ok) {
         const data = await res.json();
-        setTournament({ name: data.name, buyIn: data.buyIn, status: data.status });
+        setTournament({
+          name: data.name,
+          buyIn: data.buyIn,
+          status: data.status,
+        });
       }
     } catch {
       // Non-critical
@@ -110,7 +139,6 @@ export default function LeaderboardPage() {
     fetchTournament();
   }, [fetchLeaderboard, fetchTournament]);
 
-  // Countdown + auto-refresh
   useEffect(() => {
     setCountdown(REFRESH_INTERVAL);
 
@@ -132,199 +160,236 @@ export default function LeaderboardPage() {
   const payouts = tournament
     ? getPayoutStructure(entries.length, tournament.buyIn)
     : [];
-
   const payoutByRank = new Map(payouts.map((p) => [p.place, p.payout]));
-
-  // Split active and DQ entries
   const activeEntries = entries.filter((e) => !e.isDisqualified);
   const dqEntries = entries.filter((e) => e.isDisqualified);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
+      <div className="flex items-center justify-center py-24 text-emerald-600">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href={`/tournaments/${tournamentId}`}
-            className="text-sm text-green-600 hover:text-green-700 hover:underline"
-          >
-            &larr; Tournament Details
-          </Link>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900">
-            {tournament?.name ? `${tournament.name} - Leaderboard` : "Leaderboard"}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-          Refreshing in {countdown}s
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+      <div className="mb-6">
+        <Link
+          href={`/tournaments/${tournamentId}`}
+          className="inline-flex items-center gap-1 text-sm font-medium text-stone-500 hover:text-emerald-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Tournament Details
+        </Link>
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
+              Leaderboard
+            </p>
+            <h1 className="mt-1 font-display text-3xl font-semibold text-stone-900 sm:text-4xl">
+              {tournament?.name ?? "Tournament"}
+            </h1>
+          </div>
+          <div className="inline-flex items-center gap-2 text-xs font-medium text-stone-500">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold-400" />
+            Refreshing in {countdown}s
+          </div>
         </div>
       </div>
 
-      {error && (
-        <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
       {entries.length === 0 && !error ? (
-        <div className="mt-8 rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-gray-500">No entries yet for this tournament.</p>
-        </div>
+        <Card>
+          <EmptyState
+            icon={<Trophy className="h-6 w-6" />}
+            title="No entries yet"
+            description="Once players enter and picks are made, the leaderboard will update here."
+          />
+        </Card>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
-                    Rank
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
-                    Player
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
-                    Golfer 1
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
-                    Golfer 2
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
-                    Combined
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
-                    Payout
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {activeEntries.map((entry) => {
-                  const payout = entry.rank ? payoutByRank.get(entry.rank) : undefined;
-                  return (
-                    <tr
-                      key={entry.entryId}
-                      className={cn(
-                        payout !== undefined && payout > 0 && "bg-green-50"
-                      )}
-                    >
-                      <td className="whitespace-nowrap px-3 py-3 text-sm font-bold text-gray-900 sm:px-4">
-                        {entry.rank ?? "-"}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm font-medium text-gray-900 sm:px-4">
-                        {entry.userName}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-700 sm:px-4">
-                        {entry.picks[0] ? (
-                          <span>
-                            {entry.picks[0].golferName}{" "}
-                            <span className={cn(
-                              "font-medium",
-                              entry.picks[0].scoreToPar !== null && entry.picks[0].scoreToPar < 0 && "text-red-600",
-                              entry.picks[0].scoreToPar !== null && entry.picks[0].scoreToPar > 0 && "text-gray-500",
-                              entry.picks[0].scoreToPar === 0 && "text-green-700"
-                            )}>
-                              ({formatScore(entry.picks[0].scoreToPar)})
-                            </span>
-                          </span>
-                        ) : (
-                          "-"
+        <>
+          {/* Desktop/tablet table */}
+          <Card className="hidden overflow-hidden sm:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-stone-100 text-sm">
+                <thead className="bg-cream-50">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+                    <th className="px-4 py-3">Rank</th>
+                    <th className="px-4 py-3">Player</th>
+                    <th className="px-4 py-3">Golfer 1</th>
+                    <th className="px-4 py-3">Golfer 2</th>
+                    <th className="px-4 py-3 text-center">Combined</th>
+                    <th className="px-4 py-3 text-center">Payout</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {activeEntries.map((entry) => {
+                    const payout = entry.rank
+                      ? payoutByRank.get(entry.rank)
+                      : undefined;
+                    const inMoney = (payout ?? 0) > 0;
+                    const isTop3 =
+                      entry.rank !== null && entry.rank >= 1 && entry.rank <= 3;
+                    return (
+                      <tr
+                        key={entry.entryId}
+                        className={cn(
+                          isTop3 &&
+                            "bg-gradient-to-r from-gold-50/80 to-transparent",
+                          !isTop3 && inMoney && "bg-emerald-50/60"
                         )}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-700 sm:px-4">
-                        {entry.picks[1] ? (
-                          <span>
-                            {entry.picks[1].golferName}{" "}
-                            <span className={cn(
-                              "font-medium",
-                              entry.picks[1].scoreToPar !== null && entry.picks[1].scoreToPar < 0 && "text-red-600",
-                              entry.picks[1].scoreToPar !== null && entry.picks[1].scoreToPar > 0 && "text-gray-500",
-                              entry.picks[1].scoreToPar === 0 && "text-green-700"
-                            )}>
-                              ({formatScore(entry.picks[1].scoreToPar)})
+                      >
+                        <td className="whitespace-nowrap px-4 py-3">
+                          {isTop3 ? (
+                            <MedalBadge place={entry.rank!} />
+                          ) : (
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-stone-700">
+                              {entry.rank ?? "—"}
                             </span>
-                          </span>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-center text-sm font-bold sm:px-4">
-                        <span className={cn(
-                          entry.totalScore !== null && entry.totalScore < 0 && "text-red-600",
-                          entry.totalScore !== null && entry.totalScore > 0 && "text-gray-500",
-                          entry.totalScore === 0 && "text-green-700"
-                        )}>
-                          {formatScore(entry.totalScore)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-center text-sm font-semibold text-green-700 sm:px-4">
-                        {payout ? formatCurrency(payout) : ""}
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 font-semibold text-stone-900">
+                          {entry.userName}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-stone-700">
+                          <PickCell pick={entry.picks[0]} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-stone-700">
+                          <PickCell pick={entry.picks[1]} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-center font-display text-base font-bold">
+                          <ScoreSpan score={entry.totalScore} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-center font-semibold text-emerald-700">
+                          {payout ? formatCurrency(payout) : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {dqEntries.length > 0 && (
+                    <tr>
+                      <td colSpan={6} className="bg-cream-100/50 px-4 py-2">
+                        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stone-500">
+                          <span className="h-px flex-1 bg-gold-300" />
+                          Disqualified
+                          <span className="h-px flex-1 bg-gold-300" />
+                        </div>
                       </td>
                     </tr>
-                  );
-                })}
+                  )}
+                  {dqEntries.map((entry) => (
+                    <tr key={entry.entryId} className="bg-rose-50/30">
+                      <td className="whitespace-nowrap px-4 py-3 text-stone-400">
+                        —
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="line-through text-stone-400">
+                          {entry.userName}
+                        </span>
+                        <Badge variant="rose" size="sm" className="ml-2">
+                          DQ
+                        </Badge>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-stone-400 line-through">
+                        {entry.picks[0]?.golferName ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-stone-400 line-through">
+                        {entry.picks[1]?.golferName ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-stone-400">
+                        —
+                      </td>
+                      <td />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
 
-                {/* DQ'd entries at the bottom */}
+          {/* Mobile card list */}
+          <div className="space-y-3 sm:hidden">
+            {activeEntries.map((entry) => {
+              const payout = entry.rank
+                ? payoutByRank.get(entry.rank)
+                : undefined;
+              const isTop3 =
+                entry.rank !== null && entry.rank >= 1 && entry.rank <= 3;
+              return (
+                <Card
+                  key={entry.entryId}
+                  accent={isTop3 ? "gold" : "none"}
+                  className={cn((payout ?? 0) > 0 && !isTop3 && "bg-emerald-50/40")}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      {isTop3 ? (
+                        <MedalBadge place={entry.rank!} />
+                      ) : (
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-stone-700">
+                          {entry.rank ?? "—"}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-stone-900">
+                          {entry.userName}
+                        </p>
+                        <p className="text-xs text-stone-500">
+                          Combined{" "}
+                          <ScoreSpan score={entry.totalScore} />
+                          {payout ? (
+                            <>
+                              {" "}
+                              &middot;{" "}
+                              <span className="font-semibold text-emerald-700">
+                                {formatCurrency(payout)}
+                              </span>
+                            </>
+                          ) : null}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-sm">
+                      <div>
+                        <PickCell pick={entry.picks[0]} />
+                      </div>
+                      <div>
+                        <PickCell pick={entry.picks[1]} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+
+            {dqEntries.length > 0 && (
+              <div className="pt-4">
+                <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stone-500">
+                  <span className="h-px flex-1 bg-gold-300" />
+                  Disqualified
+                  <span className="h-px flex-1 bg-gold-300" />
+                </div>
                 {dqEntries.map((entry) => (
-                  <tr key={entry.entryId} className="bg-red-50/50">
-                    <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-400 sm:px-4">
-                      -
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-sm font-medium text-gray-400 sm:px-4">
-                      <span className="line-through">{entry.userName}</span>
-                      <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">
-                        DQ
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-400 line-through sm:px-4">
-                      {entry.picks[0] ? (
-                        <span>
-                          {entry.picks[0].golferName}{" "}
-                          ({formatScore(entry.picks[0].scoreToPar)})
-                          {entry.picks[0].isWithdrawn && (
-                            <span className="ml-1 text-xs text-red-500">WD</span>
-                          )}
-                          {entry.picks[0].madeTheCut === false && (
-                            <span className="ml-1 text-xs text-red-500">MC</span>
-                          )}
+                  <Card key={entry.entryId} className="mb-2 bg-rose-50/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="line-through text-stone-500">
+                          {entry.userName}
                         </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-400 line-through sm:px-4">
-                      {entry.picks[1] ? (
-                        <span>
-                          {entry.picks[1].golferName}{" "}
-                          ({formatScore(entry.picks[1].scoreToPar)})
-                          {entry.picks[1].isWithdrawn && (
-                            <span className="ml-1 text-xs text-red-500">WD</span>
-                          )}
-                          {entry.picks[1].madeTheCut === false && (
-                            <span className="ml-1 text-xs text-red-500">MC</span>
-                          )}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-center text-sm text-gray-400 sm:px-4">
-                      -
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-center text-sm sm:px-4">
-                    </td>
-                  </tr>
+                        <Badge variant="rose" size="sm">
+                          DQ
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

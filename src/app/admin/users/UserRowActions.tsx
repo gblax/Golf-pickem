@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Alert, Button, ConfirmDialog } from "@/components/ui";
 
 export default function UserRowActions({
   userId,
@@ -16,10 +17,13 @@ export default function UserRowActions({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function toggleAdmin() {
     if (busy) return;
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
@@ -28,7 +32,7 @@ export default function UserRowActions({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "Failed to update admin status");
+        setError(data.error || "Failed to update admin status");
         return;
       }
       router.refresh();
@@ -38,23 +42,19 @@ export default function UserRowActions({
   }
 
   async function deleteUser() {
-    if (busy) return;
-    if (
-      !confirm(
-        "Delete this user? This cannot be undone. Users with tournament entries cannot be deleted."
-      )
-    )
-      return;
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE",
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "Failed to delete user");
+        setError(data.error || "Failed to delete user");
+        setConfirmOpen(false);
         return;
       }
+      setConfirmOpen(false);
       router.refresh();
     } finally {
       setBusy(false);
@@ -62,31 +62,53 @@ export default function UserRowActions({
   }
 
   return (
-    <div className="flex justify-end gap-2">
-      <button
-        type="button"
-        onClick={toggleAdmin}
-        disabled={busy || isSelf}
-        title={isSelf ? "You cannot change your own admin status" : undefined}
-        className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isAdmin ? "Remove Admin" : "Make Admin"}
-      </button>
-      <button
-        type="button"
-        onClick={deleteUser}
-        disabled={busy || isSelf || entryCount > 0}
-        title={
-          isSelf
-            ? "You cannot delete yourself"
-            : entryCount > 0
-              ? "Cannot delete user with tournament entries"
-              : undefined
-        }
-        className="rounded border border-red-300 bg-white px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Delete
-      </button>
-    </div>
+    <>
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={toggleAdmin}
+            disabled={busy || isSelf}
+            title={isSelf ? "You cannot change your own admin status" : undefined}
+          >
+            {isAdmin ? "Remove Admin" : "Make Admin"}
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={() => setConfirmOpen(true)}
+            disabled={busy || isSelf || entryCount > 0}
+            title={
+              isSelf
+                ? "You cannot delete yourself"
+                : entryCount > 0
+                  ? "Cannot delete user with tournament entries"
+                  : undefined
+            }
+          >
+            Delete
+          </Button>
+        </div>
+        {error && (
+          <Alert variant="error" className="mt-1 text-xs">
+            {error}
+          </Alert>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete user?"
+        description="This cannot be undone. Users with tournament entries cannot be deleted."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={busy}
+        onConfirm={deleteUser}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }

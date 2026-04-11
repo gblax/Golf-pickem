@@ -1,13 +1,27 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ChevronDown, Users } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TOURNAMENT_STATUS } from "@/types";
 import { formatCurrency, formatDate, formatScore, cn } from "@/lib/utils";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  PageHeader,
+  StatusBadge,
+  Button,
+  Badge,
+  Avatar,
+  EmptyState,
+} from "@/components/ui";
 
-function getPayoutStructure(entryCount: number, buyIn: number): { place: number; payout: number }[] {
+function getPayoutStructure(
+  entryCount: number,
+  buyIn: number
+): { place: number; payout: number }[] {
   const pool = entryCount * buyIn;
   if (entryCount <= 2) return [{ place: 1, payout: pool }];
   if (entryCount <= 5)
@@ -27,6 +41,13 @@ function getPayoutStructure(entryCount: number, buyIn: number): { place: number;
     { place: 3, payout: Math.round(pool * 0.15) },
     { place: 4, payout: Math.round(pool * 0.1) },
   ];
+}
+
+function ordinal(n: number): string {
+  if (n === 1) return "1st";
+  if (n === 2) return "2nd";
+  if (n === 3) return "3rd";
+  return `${n}th`;
 }
 
 export default async function TournamentDetailPage({
@@ -69,206 +90,240 @@ export default async function TournamentDetailPage({
     tournament.entries.length,
     tournament.buyIn
   );
+  const pool = tournament.entries.length * tournament.buyIn;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {tournament.name}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {formatDate(tournament.startDate)} &ndash;{" "}
-            {formatDate(tournament.endDate)}
-          </p>
-          <div className="mt-2 flex items-center gap-3">
-            <StatusBadge status={tournament.status} />
-            <span className="text-sm text-gray-600">
-              Buy-in: {formatCurrency(tournament.buyIn)}
-            </span>
-            <span className="text-sm text-gray-600">
-              {tournament.entries.length} entries
-            </span>
-          </div>
-        </div>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+      <PageHeader
+        eyebrow={<StatusBadge status={tournament.status} />}
+        title={tournament.name}
+        subtitle={`${formatDate(tournament.startDate)} – ${formatDate(
+          tournament.endDate
+        )}`}
+        backHref="/tournaments"
+        backLabel="All tournaments"
+        actions={
+          <>
+            {session &&
+              !userEntry &&
+              tournament.status === TOURNAMENT_STATUS.UPCOMING && (
+                <Link href={`/tournaments/${id}/enter`}>
+                  <Button variant="primary">Enter Tournament</Button>
+                </Link>
+              )}
+            {userEntry && (
+              <Badge variant="emerald" size="md">
+                Entered
+              </Badge>
+            )}
+            {tournament.draft && (
+              <Link href={`/tournaments/${id}/draft`}>
+                <Button variant="secondary">Draft Room</Button>
+              </Link>
+            )}
+            {(tournament.status === TOURNAMENT_STATUS.IN_PROGRESS ||
+              tournament.status === TOURNAMENT_STATUS.COMPLETE) && (
+              <Link href={`/tournaments/${id}/leaderboard`}>
+                <Button variant="secondary">Leaderboard</Button>
+              </Link>
+            )}
+          </>
+        }
+      />
 
-        {/* Action buttons */}
-        <div className="flex flex-col gap-2 sm:items-end">
-          {session && !userEntry && tournament.status === TOURNAMENT_STATUS.UPCOMING && (
-            <Link
-              href={`/tournaments/${id}/enter`}
-              className="rounded-md bg-green-600 px-5 py-2 text-center text-sm font-medium text-white hover:bg-green-700"
-            >
-              Enter Tournament
-            </Link>
-          )}
-          {userEntry && (
-            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-              Entered
-            </span>
-          )}
-          {tournament.draft && (
-            <Link
-              href={`/tournaments/${id}/draft`}
-              className="rounded-md border border-green-600 px-5 py-2 text-center text-sm font-medium text-green-700 hover:bg-green-50"
-            >
-              Draft Room
-            </Link>
-          )}
-          {(tournament.status === TOURNAMENT_STATUS.IN_PROGRESS ||
-            tournament.status === TOURNAMENT_STATUS.COMPLETE) && (
-            <Link
-              href={`/tournaments/${id}/leaderboard`}
-              className="rounded-md border border-green-600 px-5 py-2 text-center text-sm font-medium text-green-700 hover:bg-green-50"
-            >
-              Leaderboard
-            </Link>
-          )}
-        </div>
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-wider text-stone-500">
+              Buy-in
+            </p>
+            <p className="mt-1 font-display text-2xl font-semibold text-stone-900">
+              {formatCurrency(tournament.buyIn)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-wider text-stone-500">
+              Entries
+            </p>
+            <p className="mt-1 font-display text-2xl font-semibold text-stone-900">
+              {tournament.entries.length}
+            </p>
+          </CardContent>
+        </Card>
+        <Card accent="gold">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium uppercase tracking-wider text-stone-500">
+              Total Pool
+            </p>
+            <p className="mt-1 font-display text-2xl font-semibold text-gold-600">
+              {formatCurrency(pool)}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Payout Structure */}
       {tournament.entries.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <section className="mb-8">
+          <h2 className="mb-3 font-display text-xl font-semibold text-stone-900">
             Payout Structure
           </h2>
-          <p className="mt-1 text-xs text-gray-500">
-            Total pool: {formatCurrency(tournament.entries.length * tournament.buyIn)}
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {payouts.map((p) => (
-              <div
+              <Card
                 key={p.place}
-                className="rounded-lg border border-gray-200 bg-white p-3 text-center shadow-sm"
+                accent={p.place === 1 ? "gold" : "none"}
+                className="text-center"
               >
-                <p className="text-xs font-medium text-gray-500">
-                  {p.place === 1
-                    ? "1st"
-                    : p.place === 2
-                      ? "2nd"
-                      : p.place === 3
-                        ? "3rd"
-                        : `${p.place}th`}
-                </p>
-                <p className="mt-1 text-lg font-bold text-green-700">
-                  {formatCurrency(p.payout)}
-                </p>
-              </div>
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                    {ordinal(p.place)}
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-1 font-display text-xl font-bold",
+                      p.place === 1 ? "text-gold-600" : "text-emerald-700"
+                    )}
+                  >
+                    {formatCurrency(p.payout)}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Entered Players */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Entered Players ({tournament.entries.length})
-        </h2>
+      <section className="mb-8">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="font-display text-xl font-semibold text-stone-900">
+            Entered Players
+          </h2>
+          <Badge variant="neutral" size="sm">
+            {tournament.entries.length}
+          </Badge>
+        </div>
         {tournament.entries.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">
-            No one has entered yet. Be the first!
-          </p>
+          <Card>
+            <EmptyState
+              icon={<Users className="h-6 w-6" />}
+              title="No one has entered yet"
+              description="Be the first to join."
+            />
+          </Card>
         ) : (
-          <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Player
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Picks
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Score
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {tournament.entries.map((entry) => (
-                  <tr key={entry.id} className={cn(entry.userId === userId && "bg-green-50")}>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                      {entry.user.name}
-                      {entry.isDisqualified && (
-                        <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700">
-                          DQ
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {entry.picks.length > 0
-                        ? entry.picks
-                            .sort((a, b) => a.pickOrder - b.pickOrder)
-                            .map((p) => p.tournamentGolfer.golfer.name)
-                            .join(", ")
-                        : "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-600">
-                      {entry.totalScore !== null
-                        ? formatScore(entry.totalScore)
-                        : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Field of Golfers (Collapsible) */}
-      {tournament.golfers.length > 0 && (
-        <div className="mt-8">
-          <details className="group">
-            <summary className="cursor-pointer text-lg font-semibold text-gray-900 hover:text-green-700">
-              <span className="ml-1">
-                Tournament Field ({tournament.golfers.length} golfers)
-              </span>
-            </summary>
-            <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Golfer
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Position
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Score
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Thru
-                    </th>
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-stone-100">
+                <thead className="bg-cream-50">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+                    <th className="px-5 py-3">Player</th>
+                    <th className="px-5 py-3">Picks</th>
+                    <th className="px-5 py-3 text-center">Score</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-stone-100 text-sm">
+                  {tournament.entries.map((entry) => (
+                    <tr
+                      key={entry.id}
+                      className={cn(
+                        entry.userId === userId && "bg-emerald-50/50"
+                      )}
+                    >
+                      <td className="whitespace-nowrap px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            name={entry.user.name}
+                            seed={entry.user.id}
+                            size="sm"
+                          />
+                          <div>
+                            <span className="font-medium text-stone-900">
+                              {entry.user.name}
+                            </span>
+                            {entry.isDisqualified && (
+                              <Badge
+                                variant="rose"
+                                size="sm"
+                                className="ml-2"
+                              >
+                                DQ
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-stone-600">
+                        {entry.picks.length > 0
+                          ? entry.picks
+                              .sort((a, b) => a.pickOrder - b.pickOrder)
+                              .map((p) => p.tournamentGolfer.golfer.name)
+                              .join(", ")
+                          : "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3 text-center font-medium text-stone-900">
+                        {entry.totalScore !== null
+                          ? formatScore(entry.totalScore)
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+      </section>
+
+      {tournament.golfers.length > 0 && (
+        <section>
+          <details className="group rounded-xl border border-stone-200 bg-white shadow-sm">
+            <summary className="flex cursor-pointer items-center gap-2 px-5 py-4 font-display text-lg font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
+              <ChevronDown className="h-4 w-4 text-stone-500 transition-transform group-open:rotate-0 [details:not([open])_&]:-rotate-90" />
+              Tournament Field
+              <Badge variant="neutral" size="sm">
+                {tournament.golfers.length}
+              </Badge>
+            </summary>
+            <div className="overflow-x-auto border-t border-stone-100">
+              <table className="min-w-full divide-y divide-stone-100">
+                <thead className="bg-cream-50">
+                  <tr className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                    <th className="px-5 py-3 text-left">Golfer</th>
+                    <th className="px-5 py-3 text-center">Position</th>
+                    <th className="px-5 py-3 text-center">Score</th>
+                    <th className="px-5 py-3 text-center">Thru</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 text-sm">
                   {tournament.golfers.map((tg) => (
                     <tr
                       key={tg.id}
                       className={cn(
-                        tg.isWithdrawn && "bg-gray-50 text-gray-400",
-                        tg.madeTheCut === false && "bg-gray-50 text-gray-400"
+                        (tg.isWithdrawn || tg.madeTheCut === false) &&
+                          "bg-stone-50 text-stone-400"
                       )}
                     >
-                      <td className="whitespace-nowrap px-4 py-2 text-sm font-medium">
-                        <span className={cn(tg.isWithdrawn && "line-through")}>
+                      <td className="whitespace-nowrap px-5 py-2 font-medium">
+                        <span
+                          className={cn(tg.isWithdrawn && "line-through")}
+                        >
                           {tg.golfer.name}
                         </span>
                         {tg.isWithdrawn && (
-                          <span className="ml-2 text-xs text-red-500">WD</span>
+                          <span className="ml-2 text-xs text-rose-500">
+                            WD
+                          </span>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-center text-sm">
+                      <td className="whitespace-nowrap px-5 py-2 text-center">
                         {tg.position || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-center text-sm">
+                      <td className="whitespace-nowrap px-5 py-2 text-center">
                         {formatScore(tg.scoreToPar ?? null)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-center text-sm">
+                      <td className="whitespace-nowrap px-5 py-2 text-center">
                         {tg.thru || "—"}
                       </td>
                     </tr>
@@ -277,35 +332,8 @@ export default async function TournamentDetailPage({
               </table>
             </div>
           </details>
-        </div>
+        </section>
       )}
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    UPCOMING: "bg-blue-100 text-blue-700",
-    DRAFT_OPEN: "bg-yellow-100 text-yellow-700",
-    IN_PROGRESS: "bg-green-100 text-green-700",
-    COMPLETE: "bg-gray-100 text-gray-600",
-  };
-
-  const labels: Record<string, string> = {
-    UPCOMING: "Upcoming",
-    DRAFT_OPEN: "Draft Open",
-    IN_PROGRESS: "In Progress",
-    COMPLETE: "Complete",
-  };
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-        colors[status] || "bg-gray-100 text-gray-600"
-      )}
-    >
-      {labels[status] || status}
-    </span>
   );
 }
