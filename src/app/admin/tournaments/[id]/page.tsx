@@ -27,6 +27,19 @@ type TournamentGolfer = {
   golfer: { id: string; name: string };
 };
 
+type EntryRow = {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+};
+
+type AvailableUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
 export default function ManageTournamentPage() {
   const params = useParams();
   const router = useRouter();
@@ -39,6 +52,9 @@ export default function ManageTournamentPage() {
   const [newGolferName, setNewGolferName] = useState("");
   const [draftMode, setDraftMode] = useState("LIVE");
   const [espnEvents, setEspnEvents] = useState<{ id: string; name: string; startDate: string; endDate: string }[]>([]);
+  const [entries, setEntries] = useState<EntryRow[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   const id = params.id as string;
 
@@ -58,9 +74,20 @@ export default function ManageTournamentPage() {
     }
   }, [id]);
 
+  const fetchEntries = useCallback(async () => {
+    const res = await fetch(`/api/admin/tournaments/${id}/entries`);
+    if (res.ok) {
+      const data = await res.json();
+      setEntries(data.entries);
+      setAvailableUsers(data.availableUsers);
+    }
+  }, [id]);
+
   useEffect(() => {
-    Promise.all([fetchTournament(), fetchField()]).then(() => setLoading(false));
-  }, [fetchTournament, fetchField]);
+    Promise.all([fetchTournament(), fetchField(), fetchEntries()]).then(() =>
+      setLoading(false)
+    );
+  }, [fetchTournament, fetchField, fetchEntries]);
 
   if (!session?.user?.isAdmin) {
     return <div className="p-8 text-center">Access denied</div>;
@@ -201,6 +228,42 @@ export default function ManageTournamentPage() {
     }
   }
 
+  async function optInUser() {
+    if (!selectedUserId) return;
+    setError("");
+    const res = await fetch(`/api/admin/tournaments/${id}/entries`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: selectedUserId }),
+    });
+    if (res.ok) {
+      setMessage("User opted in");
+      setSelectedUserId("");
+      fetchEntries();
+      fetchTournament();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to opt in user");
+    }
+  }
+
+  async function deleteTournament() {
+    if (
+      !confirm(
+        `Delete "${tournament?.name}"? This will permanently remove all entries, picks, and draft data. This cannot be undone.`
+      )
+    )
+      return;
+    setError("");
+    const res = await fetch(`/api/tournaments/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      router.push("/admin");
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to delete tournament");
+    }
+  }
+
   async function finalize() {
     if (!confirm("Finalize this tournament? This will calculate final standings and payouts.")) return;
     setError("");
@@ -265,6 +328,50 @@ export default function ManageTournamentPage() {
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Entries */}
+      <section className="rounded-lg bg-white p-6 shadow">
+        <h2 className="text-lg font-semibold mb-4">
+          Entries ({entries.length})
+        </h2>
+
+        {(tournament.status === "UPCOMING" || tournament.status === "DRAFT_OPEN") && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="rounded border px-3 py-1.5 text-sm"
+            >
+              <option value="">Select a user to opt in...</option>
+              {availableUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.email})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={optInUser}
+              disabled={!selectedUserId}
+              className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Opt In
+            </button>
+          </div>
+        )}
+
+        {entries.length === 0 ? (
+          <p className="text-sm text-gray-500">No entries yet.</p>
+        ) : (
+          <ul className="divide-y divide-gray-100 text-sm">
+            {entries.map((e) => (
+              <li key={e.id} className="flex items-center justify-between py-2">
+                <span className="font-medium text-gray-900">{e.userName}</span>
+                <span className="text-gray-500">{e.userEmail}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* Field Management */}
@@ -468,6 +575,21 @@ export default function ManageTournamentPage() {
           Leaderboard
         </Link>
       </div>
+
+      {/* Danger Zone */}
+      <section className="rounded-lg border border-red-200 bg-red-50 p-6">
+        <h2 className="text-lg font-semibold text-red-700 mb-2">Danger Zone</h2>
+        <p className="text-sm text-red-700 mb-3">
+          Deleting this tournament will permanently remove all entries, picks,
+          and draft data. This cannot be undone.
+        </p>
+        <button
+          onClick={deleteTournament}
+          className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+        >
+          Delete Tournament
+        </button>
+      </section>
     </div>
   );
 }

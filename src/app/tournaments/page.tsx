@@ -1,16 +1,21 @@
 export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate, cn } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatDate,
+  cn,
+  sortTournamentsByRelevance,
+} from "@/lib/utils";
 import Link from "next/link";
 
 export default async function TournamentsPage() {
-  const tournaments = await prisma.tournament.findMany({
-    orderBy: { startDate: "desc" },
+  const all = await prisma.tournament.findMany({
     include: {
       _count: { select: { entries: true } },
     },
   });
+  const tournaments = sortTournamentsByRelevance(all).slice(0, 10);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">

@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import {
+  formatDate,
+  formatCurrency,
+  sortTournamentsByRelevance,
+} from "@/lib/utils";
 import { TOURNAMENT_STATUS } from "@/types";
 import SyncScheduleButton from "./SyncScheduleButton";
 
@@ -31,7 +35,7 @@ export default async function AdminDashboard() {
     redirect("/");
   }
 
-  const [totalUsers, totalTournaments, activeTournaments, recentTournaments] =
+  const [totalUsers, totalTournaments, activeTournaments, allTournaments] =
     await Promise.all([
       prisma.user.count(),
       prisma.tournament.count(),
@@ -46,14 +50,14 @@ export default async function AdminDashboard() {
         },
       }),
       prisma.tournament.findMany({
-        orderBy: { startDate: "desc" },
-        take: 10,
         include: {
           _count: { select: { entries: true, golfers: true } },
           draft: { select: { id: true, status: true } },
         },
       }),
     ]);
+
+  const recentTournaments = sortTournamentsByRelevance(allTournaments).slice(0, 10);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -121,37 +125,37 @@ export default async function AdminDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-gray-500">
-                  <th className="px-5 py-3 font-medium">Tournament</th>
-                  <th className="px-5 py-3 font-medium">Dates</th>
-                  <th className="px-5 py-3 font-medium">Buy-in</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">Entries</th>
-                  <th className="px-5 py-3 font-medium">Field</th>
-                  <th className="px-5 py-3 font-medium">Actions</th>
+                  <th className="px-3 py-3 font-medium">Tournament</th>
+                  <th className="px-3 py-3 font-medium">Dates</th>
+                  <th className="px-3 py-3 font-medium">Buy-in</th>
+                  <th className="px-3 py-3 font-medium">Status</th>
+                  <th className="px-3 py-3 font-medium">Entries</th>
+                  <th className="px-3 py-3 font-medium">Field</th>
+                  <th className="px-3 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {recentTournaments.map((t) => (
                   <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium text-gray-900">
+                    <td className="px-3 py-3 font-medium text-gray-900">
                       {t.name}
                     </td>
-                    <td className="px-5 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-3 py-3 text-gray-600">
                       {formatDate(t.startDate)} - {formatDate(t.endDate)}
                     </td>
-                    <td className="px-5 py-3 text-gray-600">
+                    <td className="px-3 py-3 text-gray-600">
                       {formatCurrency(t.buyIn)}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3 py-3">
                       <StatusBadge status={t.status} />
                     </td>
-                    <td className="px-5 py-3 text-gray-600">
+                    <td className="px-3 py-3 text-gray-600">
                       {t._count.entries}
                     </td>
-                    <td className="px-5 py-3 text-gray-600">
+                    <td className="px-3 py-3 text-gray-600">
                       {t._count.golfers}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3 py-3">
                       <div className="flex gap-2">
                         <Link
                           href={`/admin/tournaments/${t.id}`}

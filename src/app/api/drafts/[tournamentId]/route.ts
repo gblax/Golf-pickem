@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateDraftOrder, getPickSequence, getCurrentPick } from "@/lib/draft";
+import { resolveExpiredPicks } from "@/lib/draftResolver";
 
 export async function GET(
   request: Request,
@@ -9,6 +10,14 @@ export async function GET(
 ) {
   try {
     const { tournamentId } = await params;
+
+    // Auto-DQ any users whose pick window has expired. This runs lazily
+    // on every draft read — see src/lib/draftResolver.ts.
+    try {
+      await resolveExpiredPicks(tournamentId);
+    } catch (err) {
+      console.error("Failed to resolve expired draft picks:", err);
+    }
 
     const draft = await prisma.draft.findUnique({
       where: { tournamentId },

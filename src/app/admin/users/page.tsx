@@ -4,10 +4,13 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import UserRowActions from "./UserRowActions";
 
 export default async function AdminUsersPage() {
   const session = await auth();
   if (!session?.user?.isAdmin) redirect("/");
+
+  const currentUserId = (session.user as { id: string }).id;
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -22,38 +25,54 @@ export default async function AdminUsersPage() {
       <h1 className="text-2xl font-bold text-gray-900 mt-2 mb-6">Manage Users</h1>
 
       <div className="rounded-lg bg-white shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-700">Name</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-              <th className="px-4 py-3 text-center font-medium text-gray-700">Admin</th>
-              <th className="px-4 py-3 text-center font-medium text-gray-700">Entries</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-700">Joined</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-t">
-                <td className="px-4 py-3 font-medium">{user.name}</td>
-                <td className="px-4 py-3 text-gray-600">{user.email}</td>
-                <td className="px-4 py-3 text-center">
-                  {user.isAdmin ? (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                      Admin
-                    </span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-center">{user._count.entries}</td>
-                <td className="px-4 py-3 text-gray-600">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">Name</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">Email</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-700">Admin</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-700">Entries</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">Joined</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-700">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id} className="border-t">
+                  <td className="px-4 py-3 font-medium">
+                    {user.name}
+                    {user.id === currentUserId && (
+                      <span className="ml-2 text-xs text-gray-400">(you)</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{user.email}</td>
+                  <td className="px-4 py-3 text-center">
+                    {user.isAdmin ? (
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                        Admin
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">{user._count.entries}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <UserRowActions
+                      userId={user.id}
+                      isAdmin={user.isAdmin}
+                      isSelf={user.id === currentUserId}
+                      entryCount={user._count.entries}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

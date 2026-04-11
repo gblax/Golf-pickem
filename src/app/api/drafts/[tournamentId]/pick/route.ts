@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getCurrentPick, isDraftComplete, getPickDeadline } from "@/lib/draft";
+import { resolveExpiredPicks } from "@/lib/draftResolver";
 
 export async function POST(
   request: Request,
@@ -23,6 +24,15 @@ export async function POST(
         { error: "tournamentGolferId is required" },
         { status: 400 }
       );
+    }
+
+    // Auto-DQ any users whose pick window has already expired before we
+    // validate the incoming pick. If the caller themselves were the one
+    // who timed out, they'll be rejected below as "not your turn".
+    try {
+      await resolveExpiredPicks(tournamentId);
+    } catch (err) {
+      console.error("Failed to resolve expired draft picks:", err);
     }
 
     const draft = await prisma.draft.findUnique({

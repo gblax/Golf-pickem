@@ -202,9 +202,6 @@ export default function LeaderboardPage() {
                   <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
                     Payout
                   </th>
-                  <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4">
-                    Status
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -269,9 +266,6 @@ export default function LeaderboardPage() {
                       <td className="whitespace-nowrap px-3 py-3 text-center text-sm font-semibold text-green-700 sm:px-4">
                         {payout ? formatCurrency(payout) : ""}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-center text-sm text-gray-500 sm:px-4">
-                        {entry.picks[0]?.thru || "-"}
-                      </td>
                     </tr>
                   );
                 })}
@@ -282,8 +276,11 @@ export default function LeaderboardPage() {
                     <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-400 sm:px-4">
                       -
                     </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-sm font-medium text-gray-400 line-through sm:px-4">
-                      {entry.userName}
+                    <td className="whitespace-nowrap px-3 py-3 text-sm font-medium text-gray-400 sm:px-4">
+                      <span className="line-through">{entry.userName}</span>
+                      <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">
+                        DQ
+                      </span>
                     </td>
                     <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-400 line-through sm:px-4">
                       {entry.picks[0] ? (
@@ -321,11 +318,6 @@ export default function LeaderboardPage() {
                       -
                     </td>
                     <td className="whitespace-nowrap px-3 py-3 text-center text-sm sm:px-4">
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-center sm:px-4">
-                      <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">
-                        DQ
-                      </span>
                     </td>
                   </tr>
                 ))}

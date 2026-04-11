@@ -30,3 +30,30 @@ export function formatDateTime(date: Date | string): string {
     minute: "2-digit",
   });
 }
+
+const TOURNAMENT_STATUS_PRIORITY: Record<string, number> = {
+  IN_PROGRESS: 0,
+  DRAFT_OPEN: 1,
+  UPCOMING: 2,
+  COMPLETE: 3,
+};
+
+/**
+ * Sort tournaments so active and upcoming appear first (soonest first),
+ * then completed tournaments (most recent first).
+ */
+export function sortTournamentsByRelevance<
+  T extends { status: string; startDate: Date | string },
+>(tournaments: T[]): T[] {
+  return [...tournaments].sort((a, b) => {
+    const pa = TOURNAMENT_STATUS_PRIORITY[a.status] ?? 99;
+    const pb = TOURNAMENT_STATUS_PRIORITY[b.status] ?? 99;
+    if (pa !== pb) return pa - pb;
+
+    const ta = new Date(a.startDate).getTime();
+    const tb = new Date(b.startDate).getTime();
+    // Completed: most recent first (DESC). Everything else: soonest first (ASC).
+    if (pa === TOURNAMENT_STATUS_PRIORITY.COMPLETE) return tb - ta;
+    return ta - tb;
+  });
+}
