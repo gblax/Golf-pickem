@@ -118,7 +118,7 @@ export default function EnterTournamentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12">
+    <div className="animate-fade-in-up mx-auto max-w-lg px-4 py-12">
       <Card accent="gold">
         <CardContent className="p-6">
           <h1 className="font-display text-2xl font-semibold text-stone-900">

@@ -18,7 +18,7 @@ export const metadata = {
 
 export default function RulesPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-3xl px-4 py-8 sm:py-10">
       <PageHeader
         eyebrow="How it works"
         title="Rules & Scoring"

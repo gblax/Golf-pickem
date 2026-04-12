@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Search, Clock, Trophy, ArrowLeft } from "lucide-react";
+import { Search, Clock, Trophy, ArrowLeft, ListOrdered, Users, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Button,
@@ -255,7 +255,7 @@ export default function DraftPage() {
   /* ================================================================ */
   if (draft.status === "PENDING") {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="animate-fade-in-up mx-auto max-w-3xl px-4 py-8">
         <Link
           href={`/tournaments/${tournamentId}`}
           className="inline-flex items-center gap-1 text-sm font-medium text-stone-500 hover:text-emerald-700"
@@ -270,8 +270,8 @@ export default function DraftPage() {
 
         <Card accent="gold" className="mt-6">
           <CardContent className="p-6 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gold-100 text-gold-600">
-              <Clock className="h-6 w-6" />
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gold-100 text-gold-600">
+              <Clock className="h-7 w-7" />
             </div>
             <h2 className="font-display text-xl font-semibold text-stone-900">
               Waiting for Admin to Start
@@ -280,6 +280,11 @@ export default function DraftPage() {
               The draft order has been set. The commissioner will tee it off
               when everyone&apos;s ready.
             </p>
+            <div className="mx-auto mt-4 flex items-center justify-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-gold-400" style={{ animationDelay: "0ms" }} />
+              <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-gold-400" style={{ animationDelay: "150ms" }} />
+              <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-gold-400" style={{ animationDelay: "300ms" }} />
+            </div>
           </CardContent>
         </Card>
 
@@ -368,7 +373,7 @@ export default function DraftPage() {
     }
 
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="animate-fade-in-up mx-auto max-w-4xl px-4 py-8">
         <Link
           href={`/tournaments/${tournamentId}`}
           className="inline-flex items-center gap-1 text-sm font-medium text-stone-500 hover:text-emerald-700"
@@ -454,9 +459,10 @@ export default function DraftPage() {
   /* IN_PROGRESS STATE                                                 */
   /* ================================================================ */
   const lowTime = timerSeconds !== null && timerSeconds <= 30;
+  const [mobileTab, setMobileTab] = useState<"golfers" | "order" | "history">("golfers");
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className="animate-fade-in-up mx-auto max-w-7xl px-4 py-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Link
@@ -473,7 +479,7 @@ export default function DraftPage() {
         </div>
         <div className="flex items-center gap-3">
           <Badge variant="emerald">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-600" />
+            <span className="h-2 w-2 animate-live-pulse rounded-full bg-emerald-600" />
             Live
           </Badge>
           <span className="text-sm text-stone-500">
@@ -482,22 +488,22 @@ export default function DraftPage() {
         </div>
       </div>
 
-      {/* On the clock banner */}
+      {/* On the clock banner - sticky on mobile */}
       <div
         className={cn(
-          "mt-4 overflow-hidden rounded-xl border shadow-sm transition-all",
+          "sticky top-16 z-30 mt-4 overflow-hidden rounded-xl border shadow-sm transition-all",
           isMyTurn
             ? "border-gold-400 bg-gradient-to-r from-gold-50 to-cream-100"
             : "border-stone-200 bg-white",
           isMyTurn && lowTime && "animate-gold-pulse"
         )}
       >
-        <div className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
               On the Clock
             </p>
-            <p className="mt-1 font-display text-2xl font-semibold text-stone-900 sm:text-3xl">
+            <p className="mt-1 font-display text-xl font-semibold text-stone-900 sm:text-3xl">
               {isMyTurn
                 ? "It's your pick"
                 : currentPickUser
@@ -506,7 +512,7 @@ export default function DraftPage() {
             </p>
             {draft.currentPick && (
               <p className="mt-1 text-xs text-stone-500">
-                Overall pick #{draft.currentPick.overallPick} · Round{" "}
+                Pick #{draft.currentPick.overallPick} · Round{" "}
                 {draft.currentPick.round}
               </p>
             )}
@@ -518,7 +524,7 @@ export default function DraftPage() {
               </p>
               <p
                 className={cn(
-                  "font-display font-bold tabular-nums text-4xl sm:text-5xl",
+                  "font-display font-bold tabular-nums text-3xl sm:text-5xl",
                   lowTime ? "text-rose-600" : "text-stone-900"
                 )}
               >
@@ -536,9 +542,32 @@ export default function DraftPage() {
         </Alert>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+      {/* Mobile tab navigation */}
+      <div className="mt-4 flex gap-1 rounded-lg bg-stone-100 p-1 lg:hidden">
+        {([
+          { key: "golfers" as const, label: "Golfers", icon: Users },
+          { key: "order" as const, label: "Order", icon: ListOrdered },
+          { key: "history" as const, label: "History", icon: History },
+        ]).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setMobileTab(key)}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              mobileTab === key
+                ? "bg-white text-emerald-700 shadow-sm"
+                : "text-stone-500 hover:text-stone-700"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-6 lg:mt-6 lg:grid-cols-12">
         {/* Left: Draft Order */}
-        <aside className="lg:col-span-3">
+        <aside className={cn("lg:col-span-3", mobileTab !== "order" && "hidden lg:block")}>
           <Card className="overflow-hidden">
             <div className="border-b border-stone-100 px-4 py-3">
               <h2 className="font-display text-sm font-semibold text-stone-900">
@@ -617,7 +646,7 @@ export default function DraftPage() {
         </aside>
 
         {/* Center: Available Golfers */}
-        <section className="lg:col-span-5">
+        <section className={cn("lg:col-span-5", mobileTab !== "golfers" && "hidden lg:block")}>
           <Card className="overflow-hidden">
             <div className="border-b border-stone-100 px-4 py-3">
               <div className="flex items-center justify-between">
@@ -674,7 +703,7 @@ export default function DraftPage() {
         </section>
 
         {/* Right: Pick History */}
-        <aside className="lg:col-span-4">
+        <aside className={cn("lg:col-span-4", mobileTab !== "history" && "hidden lg:block")}>
           <Card className="overflow-hidden">
             <div className="border-b border-stone-100 px-4 py-3">
               <div className="flex items-center justify-between">

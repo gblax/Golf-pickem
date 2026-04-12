@@ -99,7 +99,7 @@ export default async function TournamentDetailPage({
   const pool = tournament.entries.length * tournament.buyIn;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-5xl px-4 py-8 sm:py-10">
       <PageHeader
         eyebrow={<StatusBadge status={tournament.status} />}
         title={tournament.name}
@@ -240,6 +240,7 @@ export default async function TournamentDetailPage({
                     <tr
                       key={entry.id}
                       className={cn(
+                        "transition-colors hover:bg-cream-50",
                         entry.userId === userId && "bg-emerald-50/50"
                       )}
                     >
@@ -313,6 +314,7 @@ export default async function TournamentDetailPage({
                     <tr
                       key={tg.id}
                       className={cn(
+                        "transition-colors hover:bg-cream-50",
                         (tg.isWithdrawn || tg.madeTheCut === false) &&
                           "bg-stone-50 text-stone-400"
                       )}

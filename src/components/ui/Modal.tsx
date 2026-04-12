@@ -56,12 +56,12 @@ export default function Modal({
       role="dialog"
     >
       <div
-        className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
+        className="animate-fade-in absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
         className={cn(
-          "relative w-full rounded-xl border border-stone-200 bg-white shadow-xl",
+          "animate-dropdown-enter relative w-full rounded-xl border border-stone-200 bg-white shadow-xl",
           sizeClasses[size],
           className
         )}
