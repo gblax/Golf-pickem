@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import {
   Alert,
+  Avatar,
   Badge,
   Card,
   CardContent,
@@ -83,7 +84,7 @@ export default function StandingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-5xl px-4 py-8 sm:py-10">
       <PageHeader
         eyebrow="Season"
         title="Standings"
@@ -130,6 +131,7 @@ export default function StandingsPage() {
                       <tr
                         key={entry.userId}
                         className={cn(
+                          "transition-colors hover:bg-cream-100/60",
                           isTop3 &&
                             "bg-gradient-to-r from-gold-50/80 to-transparent"
                         )}
@@ -144,14 +146,17 @@ export default function StandingsPage() {
                           )}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
-                          <span className="font-semibold text-stone-900">
-                            {entry.userName}
-                          </span>
-                          {entry.wins > 0 && (
-                            <Badge variant="gold" size="sm" className="ml-2">
-                              {entry.wins}W
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-2.5">
+                            <Avatar name={entry.userName} seed={entry.userId} size="sm" />
+                            <span className="font-semibold text-stone-900">
+                              {entry.userName}
+                            </span>
+                            {entry.wins > 0 && (
+                              <Badge variant="gold" size="sm">
+                                {entry.wins}W
+                              </Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-center text-stone-600 tabular-nums">
                           {entry.totalEntries}
@@ -195,6 +200,7 @@ export default function StandingsPage() {
                           {rank}
                         </span>
                       )}
+                      <Avatar name={entry.userName} seed={entry.userId} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="flex items-center gap-2 truncate font-semibold text-stone-900">
                           {entry.userName}

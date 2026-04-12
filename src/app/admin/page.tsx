@@ -52,7 +52,7 @@ export default async function AdminDashboard() {
   const recentTournaments = sortTournamentsByRelevance(allTournaments).slice(0, 10);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-6xl px-4 py-8 sm:py-10">
       <PageHeader
         eyebrow="Admin"
         title="Dashboard"
@@ -129,7 +129,7 @@ export default async function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {recentTournaments.map((t) => (
-                    <tr key={t.id} className="hover:bg-cream-50">
+                    <tr key={t.id} className="transition-colors hover:bg-cream-50">
                       <td className="whitespace-nowrap px-4 py-3 font-medium text-stone-900">
                         {t.name}
                       </td>

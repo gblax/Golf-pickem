@@ -1,12 +1,12 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Trophy, Target, ListOrdered } from "lucide-react";
+import { Trophy, Target, ListOrdered, Calendar } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TOURNAMENT_STATUS } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Card, CardContent, StatusBadge, Button, EmptyState } from "@/components/ui";
+import { Card, CardContent, StatusBadge, Button, EmptyState, Badge } from "@/components/ui";
 
 export default async function HomePage() {
   const session = await auth();
@@ -23,7 +23,7 @@ export default async function HomePage() {
           aria-hidden
           className="absolute bottom-[-120px] left-[-60px] h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"
         />
-        <div className="relative mx-auto flex min-h-[calc(100vh-4rem-88px)] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center">
+        <div className="animate-fade-in-up relative mx-auto flex min-h-[calc(100vh-4rem-88px)] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-emerald-700 ring-1 ring-emerald-100 backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-gold-400" />
             Weekly PGA Pick-em Pool
@@ -90,8 +90,12 @@ export default async function HomePage() {
         ? "gold"
         : "stone";
 
+  const isLive = tournament?.status === TOURNAMENT_STATUS.IN_PROGRESS;
+  const isDraftOpen = tournament?.status === TOURNAMENT_STATUS.DRAFT_OPEN;
+  const pool = tournament ? tournament.entries.length * tournament.buyIn : 0;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-5xl px-4 py-8 sm:py-10">
       <div className="mb-8">
         <p className="text-sm font-medium uppercase tracking-wider text-emerald-700">
           Clubhouse
@@ -104,26 +108,26 @@ export default async function HomePage() {
       {tournament ? (
         <Card accent={accent} interactive className="overflow-hidden">
           <CardContent className="p-0">
+            {/* Live/Draft status strip */}
+            {(isLive || isDraftOpen) && (
+              <div className={`flex items-center gap-2 px-6 py-2 text-xs font-semibold uppercase tracking-widest ${isLive ? "bg-emerald-600 text-white" : "bg-gold-100 text-gold-800"}`}>
+                <span className={`inline-block h-2 w-2 rounded-full ${isLive ? "animate-live-pulse bg-white" : "animate-live-pulse bg-gold-500"}`} />
+                {isLive ? "Live Now" : "Draft Open"}
+              </div>
+            )}
             <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
-                  {tournament.status === TOURNAMENT_STATUS.UPCOMING
-                    ? "Upcoming Tournament"
-                    : tournament.status === TOURNAMENT_STATUS.IN_PROGRESS
-                      ? "Live Now"
-                      : tournament.status === TOURNAMENT_STATUS.DRAFT_OPEN
-                        ? "Draft Open"
-                        : "Current Tournament"}
-                </p>
-                <h2 className="mt-1 font-display text-2xl font-semibold text-stone-900">
+                <h2 className="font-display text-2xl font-semibold text-stone-900">
                   {tournament.name}
                 </h2>
-                <p className="mt-1 text-sm text-stone-500">
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-500">
+                  <Calendar className="h-3.5 w-3.5" />
                   {formatDate(tournament.startDate)} &ndash;{" "}
                   {formatDate(tournament.endDate)}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
                   <StatusBadge status={tournament.status} />
+                  <span className="text-stone-400">&middot;</span>
                   <span className="text-stone-600">
                     Buy-in{" "}
                     <span className="font-semibold text-stone-900">
@@ -137,6 +141,14 @@ export default async function HomePage() {
                     </span>{" "}
                     entered
                   </span>
+                  {pool > 0 && (
+                    <>
+                      <span className="text-stone-400">&middot;</span>
+                      <span className="font-semibold text-gold-600">
+                        {formatCurrency(pool)} pot
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -149,10 +161,9 @@ export default async function HomePage() {
                   </Link>
                 )}
                 {userEntry && (
-                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                  <Badge variant="emerald" size="md">
                     You&apos;re entered
-                  </span>
+                  </Badge>
                 )}
                 {tournament.draft &&
                   tournament.draft.status !== "COMPLETE" &&

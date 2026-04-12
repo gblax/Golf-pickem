@@ -42,6 +42,7 @@ export default function Nav() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Close menu on outside click
   useEffect(() => {
     if (!userMenuOpen) return;
     const onClick = (e: MouseEvent) => {
@@ -55,6 +56,24 @@ export default function Nav() {
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, [userMenuOpen]);
+
+  // Close menus on Escape key
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setUserMenuOpen(false);
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+    setUserMenuOpen(false);
+  }, [pathname]);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -128,26 +147,29 @@ export default function Nav() {
                     <span className="max-w-[140px] truncate">
                       {session.user?.name}
                     </span>
-                    <ChevronDown className="h-4 w-4 opacity-80" />
+                    <ChevronDown className={cn("h-4 w-4 opacity-80 transition-transform duration-200", userMenuOpen && "rotate-180")} />
                   </button>
                   {userMenuOpen && (
                     <div
                       role="menu"
-                      className="absolute right-0 mt-2 w-48 overflow-hidden rounded-lg border border-stone-200 bg-white py-1 text-sm text-stone-800 shadow-lg"
+                      className="animate-dropdown-enter absolute right-0 mt-2 w-48 overflow-hidden rounded-lg border border-stone-200 bg-white py-1 text-sm text-stone-800 shadow-lg"
                     >
                       <Link
                         href="/profile"
                         onClick={() => setUserMenuOpen(false)}
-                        className="block px-4 py-2 hover:bg-cream-100"
+                        className="flex items-center gap-2 px-4 py-2.5 transition-colors hover:bg-cream-100"
+                        role="menuitem"
                       >
                         Profile
                       </Link>
+                      <div className="mx-3 border-t border-stone-100" />
                       <button
                         onClick={() => {
                           setUserMenuOpen(false);
                           signOut();
                         }}
-                        className="block w-full cursor-pointer px-4 py-2 text-left hover:bg-cream-100"
+                        className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-cream-100"
+                        role="menuitem"
                       >
                         Sign Out
                       </button>

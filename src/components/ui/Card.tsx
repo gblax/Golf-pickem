@@ -25,7 +25,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       ref={ref}
       className={cn(
         "rounded-xl border border-stone-200 bg-white shadow-sm",
-        interactive && "transition-shadow hover:shadow-md",
+        interactive && "transition-all hover:-translate-y-0.5 hover:shadow-md",
         accentClasses[accent],
         className
       )}

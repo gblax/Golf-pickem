@@ -97,7 +97,7 @@ export default async function ProfilePage() {
   const roiPositive = totalBuyIns > 0 && roiNumerator >= 0;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-5xl px-4 py-8 sm:py-10">
       <PageHeader eyebrow="Profile" title="Your Clubhouse" />
 
       <Card className="mb-6">
@@ -113,7 +113,7 @@ export default async function ProfilePage() {
       </Card>
 
       <Card className="mb-8">
-        <div className="grid grid-cols-2 divide-stone-100 sm:grid-cols-4 sm:divide-x">
+        <div className="grid grid-cols-2 divide-x divide-y divide-stone-100 sm:grid-cols-4 sm:divide-y-0">
           <StatCell label="Entries" value={totalEntries} />
           <StatCell
             label="Winnings"
@@ -162,7 +162,7 @@ export default async function ProfilePage() {
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {entries.map((entry) => (
-                    <tr key={entry.id} className="hover:bg-cream-50">
+                    <tr key={entry.id} className="transition-colors hover:bg-cream-50">
                       <td className="px-4 py-3">
                         <Link
                           href={`/tournaments/${entry.tournament.id}`}

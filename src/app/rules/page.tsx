@@ -18,14 +18,14 @@ export const metadata = {
 
 export default function RulesPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-3xl px-4 py-8 sm:py-10">
       <PageHeader
         eyebrow="How it works"
         title="Rules & Scoring"
         subtitle="How to enter, draft, and win."
       />
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         <Section icon={<Flag className="h-5 w-5" />} title="Overview">
           <p>
             Golf Pick&apos;em is a friends-only weekly PGA Tour pool. Buy in,
@@ -105,17 +105,17 @@ export default function RulesPage() {
         >
           <ul className="ml-5 list-disc space-y-2">
             <li>
-              <strong>Missed cut:</strong> the golfer&apos;s 36-hole score
-              still counts.
-            </li>
-            <li>
-              <strong>Withdrawal:</strong> the WD&apos;d golfer&apos;s score
-              freezes; your other pick keeps going.
-            </li>
-            <li>
-              <strong>Both out:</strong> if both of your picks miss the cut or
-              withdraw, your entry is <strong>DQ</strong>&apos;d and
+              If <strong>either</strong> of your golfers misses the cut or
+              withdraws, your entry is <strong>DQ&apos;d</strong> and
               can&apos;t cash.
+            </li>
+            <li>
+              This means choosing two golfers who will make the weekend is
+              just as important as picking low scorers.
+            </li>
+            <li>
+              DQ&apos;d entries appear at the bottom of the leaderboard and
+              are not eligible for payouts.
             </li>
           </ul>
         </Section>
@@ -219,16 +219,16 @@ function Section({
 }) {
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+      <CardContent className="px-5 py-5 sm:px-6 sm:py-5">
+        <div className="mb-3 flex items-center gap-2.5">
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
             {icon}
           </span>
-          <h2 className="font-display text-xl font-semibold text-stone-900">
+          <h2 className="font-display text-lg font-semibold text-stone-900 sm:text-xl">
             {title}
           </h2>
         </div>
-        <div className="space-y-3 text-sm leading-relaxed text-stone-700">
+        <div className="space-y-2 text-sm leading-relaxed text-stone-700">
           {children}
         </div>
       </CardContent>

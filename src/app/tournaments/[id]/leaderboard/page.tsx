@@ -173,7 +173,7 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+    <div className="animate-fade-in-up mx-auto max-w-6xl px-4 py-8 sm:py-10">
       <div className="mb-6">
         <Link
           href={`/tournaments/${tournamentId}`}
@@ -191,9 +191,18 @@ export default function LeaderboardPage() {
               {tournament?.name ?? "Tournament"}
             </h1>
           </div>
-          <div className="inline-flex items-center gap-2 text-xs font-medium text-stone-500">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold-400" />
-            Refreshing in {countdown}s
+          <div className="flex flex-col items-end gap-1">
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-stone-500">
+              <span className="inline-block h-2 w-2 animate-live-pulse rounded-full bg-emerald-500" />
+              Auto-refresh · {countdown}s
+            </div>
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-stone-200">
+              <div
+                key={countdown === REFRESH_INTERVAL ? Date.now() : "stable"}
+                className="h-full rounded-full bg-emerald-500 animate-countdown"
+                style={{ "--countdown-duration": `${REFRESH_INTERVAL}s` } as React.CSSProperties}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -236,6 +245,7 @@ export default function LeaderboardPage() {
                       <tr
                         key={entry.entryId}
                         className={cn(
+                          "transition-colors hover:bg-cream-100/60",
                           isTop3 &&
                             "bg-gradient-to-r from-gold-50/80 to-transparent",
                           !isTop3 && inMoney && "bg-emerald-50/60"
@@ -339,7 +349,9 @@ export default function LeaderboardPage() {
                         </p>
                         <p className="text-xs text-stone-500">
                           Combined{" "}
-                          <ScoreSpan score={entry.totalScore} />
+                          <span className="font-display text-base font-bold">
+                            <ScoreSpan score={entry.totalScore} />
+                          </span>
                           {payout ? (
                             <>
                               {" "}
@@ -352,13 +364,24 @@ export default function LeaderboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-sm">
-                      <div>
-                        <PickCell pick={entry.picks[0]} />
-                      </div>
-                      <div>
-                        <PickCell pick={entry.picks[1]} />
-                      </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-stone-100 pt-3 text-sm">
+                      {entry.picks.map((pick, i) => (
+                        <div key={i} className="rounded-lg bg-cream-50 px-3 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+                            Pick {i + 1}
+                          </p>
+                          <p className="font-medium text-stone-800">
+                            {pick?.golferName ?? "—"}
+                          </p>
+                          {pick && (
+                            <p className="mt-0.5 text-xs text-stone-500">
+                              <ScoreSpan score={pick.scoreToPar} />
+                              {pick.position && <> · {pick.position}</>}
+                              {pick.thru && <> · {pick.thru}</>}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
