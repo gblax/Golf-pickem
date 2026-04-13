@@ -124,6 +124,11 @@ export async function fetchTournamentField(
   const event = data.events?.[0];
   if (!event) throw new Error("Event not found");
 
+  // ESPN silently returns the current event when the requested one has no data yet
+  if (String(event.id) !== String(eventId)) {
+    return [];
+  }
+
   const competitors =
     event.competitions?.[0]?.competitors || [];
 

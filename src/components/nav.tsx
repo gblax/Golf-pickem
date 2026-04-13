@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, RefreshCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Flag({ className }: { className?: string }) {
@@ -41,6 +41,21 @@ export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Detect standalone PWA mode
+  useEffect(() => {
+    setIsStandalone(
+      window.matchMedia("(display-mode: standalone)").matches ||
+        (navigator as unknown as { standalone?: boolean }).standalone === true
+    );
+  }, []);
+
+  function handleRefresh() {
+    setRefreshing(true);
+    window.location.reload();
+  }
 
   // Close menu on outside click
   useEffect(() => {
@@ -136,6 +151,16 @@ export default function Nav() {
             )}
 
             <div className="ml-3 flex items-center gap-2">
+              {isStandalone && (
+                <button
+                  onClick={handleRefresh}
+                  className="rounded-md p-1.5 text-emerald-100 hover:bg-emerald-800 hover:text-white"
+                  aria-label="Refresh app"
+                  title="Refresh"
+                >
+                  <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+                </button>
+              )}
               {session ? (
                 <div className="relative" ref={userMenuRef}>
                   <button
@@ -196,13 +221,24 @@ export default function Nav() {
           </div>
 
           {/* Mobile toggle */}
-          <button
-            className="rounded-md p-2 hover:bg-emerald-800 md:hidden"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          <div className="flex items-center gap-1 md:hidden">
+            {isStandalone && (
+              <button
+                onClick={handleRefresh}
+                className="rounded-md p-2 text-emerald-100 hover:bg-emerald-800 hover:text-white"
+                aria-label="Refresh app"
+              >
+                <RefreshCw className={cn("h-5 w-5", refreshing && "animate-spin")} />
+              </button>
+            )}
+            <button
+              className="rounded-md p-2 hover:bg-emerald-800"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile menu */}
