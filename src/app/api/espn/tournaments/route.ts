@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { fetchTournaments } from "@/lib/espn";
+import { fetchSchedule } from "@/lib/espn";
 
 export async function GET() {
   try {
-    const tournaments = await fetchTournaments();
+    const tournaments = await fetchSchedule();
     return NextResponse.json(tournaments);
   } catch (error) {
     console.error("Error fetching ESPN tournaments:", error);

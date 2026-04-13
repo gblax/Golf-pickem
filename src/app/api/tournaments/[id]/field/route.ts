@@ -105,7 +105,7 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { message: `Imported ${created} golfers into tournament field` },
+      { message: `Imported ${created} golfers into tournament field`, imported: created },
       { status: 201 }
     );
   } catch (error) {
