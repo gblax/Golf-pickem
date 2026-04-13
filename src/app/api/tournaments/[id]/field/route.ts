@@ -43,6 +43,7 @@ export async function POST(
     const { id } = await params;
     const body = await request.json();
     const golfers: { name: string; externalId?: string }[] = body.golfers ?? body;
+    const replace: boolean = body.replace === true;
 
     if (!Array.isArray(golfers) || golfers.length === 0) {
       return NextResponse.json(
@@ -60,6 +61,22 @@ export async function POST(
         { error: "Tournament not found" },
         { status: 404 }
       );
+    }
+
+    // If replace mode, clear existing field (only safe before draft picks exist)
+    if (replace) {
+      const draftPickCount = await prisma.draftPick.count({
+        where: { tournamentGolfer: { tournamentId: id } },
+      });
+      if (draftPickCount > 0) {
+        return NextResponse.json(
+          { error: "Cannot replace field after draft picks have been made" },
+          { status: 409 }
+        );
+      }
+      await prisma.tournamentGolfer.deleteMany({
+        where: { tournamentId: id },
+      });
     }
 
     let created = 0;
@@ -105,7 +122,7 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { message: `Imported ${created} golfers into tournament field` },
+      { message: `Imported ${created} golfers into tournament field`, imported: created },
       { status: 201 }
     );
   } catch (error) {
