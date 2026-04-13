@@ -180,10 +180,18 @@ export default function ManageTournamentPage() {
         externalId: g.id,
       }));
 
+      if (golfers.length === 0) {
+        setMessage("");
+        setError(
+          "The field for this tournament isn't available on ESPN yet. Try again closer to the event."
+        );
+        return;
+      }
+
       const importRes = await fetch(`/api/tournaments/${id}/field`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ golfers }),
+        body: JSON.stringify({ golfers, replace: true }),
       });
 
       if (importRes.ok) {
@@ -191,10 +199,13 @@ export default function ManageTournamentPage() {
         setMessage(`Imported ${data.imported} golfers from ESPN`);
         fetchField();
       } else {
-        throw new Error("Failed to import field");
+        const data = await importRes.json();
+        throw new Error(data.error || "Failed to import field");
       }
-    } catch {
-      setError("Failed to import from ESPN");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to import from ESPN"
+      );
     }
   }
 
