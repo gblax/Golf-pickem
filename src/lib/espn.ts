@@ -171,3 +171,119 @@ export async function fetchLiveScores(
   // Same endpoint, same parsing — just called during tournament
   return fetchTournamentField(eventId);
 }
+
+const ESPN_CORE_BASE = "https://sports.core.api.espn.com/v2/sports/golf/leagues/pga";
+
+export type ESPNOddsEntry = {
+  athleteId: string; // numeric ESPN athlete id (matches ESPNGolfer.id)
+  value: string; // American odds string: "+1200", "-110", "EVEN"
+};
+
+export type ESPNOddsResult = {
+  provider: string | null;
+  entries: ESPNOddsEntry[];
+};
+
+/**
+ * Normalize a futures market name ("2026 RBC Heritage Winner") or a tournament
+ * display name ("RBC Heritage") to a comparable form by stripping year prefixes,
+ * trailing "winner", and collapsing whitespace.
+ */
+function normalizeEventName(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/^\s*20\d{2}\s+/, "")
+    .replace(/\s+winner\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Fetch outright winner odds for a PGA tournament from ESPN's core v2 futures
+ * feed. Matches the tournament by fuzzy name comparison — the feed has no
+ * event id FK. Picks the provider with the most athlete entries for best
+ * coverage. Returns an empty result (not an error) if no matching market is
+ * found, since new tournaments may not have a futures market posted yet.
+ */
+export async function fetchOutrightOdds(
+  eventName: string
+): Promise<ESPNOddsResult> {
+  const res = await fetch(`${ESPN_CORE_BASE}/futures`, {
+    next: { revalidate: 0 },
+  });
+  if (!res.ok) throw new Error(`ESPN futures API error: ${res.status}`);
+
+  const data = await res.json();
+  const items = (data.items as Record<string, unknown>[] | undefined) ?? [];
+
+  const target = normalizeEventName(eventName);
+  if (!target) return { provider: null, entries: [] };
+
+  // Find the best-matching Winner market for this tournament.
+  const match = items.find((item) => {
+    const name = normalizeEventName(String(item.name ?? ""));
+    return (
+      name === target ||
+      name === `${target}` ||
+      name.includes(target) ||
+      target.includes(name)
+    );
+  });
+
+  if (!match) return { provider: null, entries: [] };
+
+  const providers =
+    (match.futures as Record<string, unknown>[] | undefined) ??
+    (match.books as Record<string, unknown>[] | undefined) ??
+    [];
+
+  type ProviderPick = {
+    name: string | null;
+    priority: number;
+    entries: ESPNOddsEntry[];
+  };
+
+  let best: ProviderPick | null = null;
+
+  for (const p of providers) {
+    // Per-provider price list can be under `books` or `futures` depending on
+    // which ESPN surface is serving the payload.
+    const prices =
+      (p.books as Record<string, unknown>[] | undefined) ??
+      (p.futures as Record<string, unknown>[] | undefined) ??
+      [];
+
+    const entries: ESPNOddsEntry[] = [];
+    for (const price of prices) {
+      const athleteRef = (price.athlete as { $ref?: string } | undefined)?.$ref;
+      const value = price.value;
+      if (!athleteRef || typeof value !== "string") continue;
+      const idMatch = athleteRef.match(/\/athletes\/(\d+)/);
+      if (!idMatch) continue;
+      entries.push({ athleteId: idMatch[1], value });
+    }
+
+    if (entries.length === 0) continue;
+
+    const provider = p.provider as
+      | { name?: string; priority?: number }
+      | undefined;
+    const pick: ProviderPick = {
+      name: provider?.name ?? null,
+      priority: provider?.priority ?? Number.MAX_SAFE_INTEGER,
+      entries,
+    };
+
+    if (
+      !best ||
+      pick.entries.length > best.entries.length ||
+      (pick.entries.length === best.entries.length &&
+        pick.priority < best.priority)
+    ) {
+      best = pick;
+    }
+  }
+
+  if (!best) return { provider: null, entries: [] };
+  return { provider: best.name, entries: best.entries };
+}

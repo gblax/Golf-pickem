@@ -74,6 +74,8 @@ interface TournamentGolfer {
   id: string;
   tournamentId: string;
   golferId: string;
+  odds: string | null;
+  oddsProvider: string | null;
   golfer: { id: string; name: string; externalId: string | null };
 }
 
@@ -680,11 +682,23 @@ export default function DraftPage() {
                   {filteredGolfers.map((golfer) => (
                     <li
                       key={golfer.id}
-                      className="flex items-center justify-between px-4 py-2.5 hover:bg-cream-50"
+                      className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-cream-50"
                     >
-                      <span className="text-sm font-medium text-stone-900">
-                        {golfer.golfer.name}
-                      </span>
+                      <div className="flex items-baseline gap-2 min-w-0">
+                        <span className="text-sm font-medium text-stone-900 truncate">
+                          {golfer.golfer.name}
+                        </span>
+                        <span
+                          className="text-xs font-mono text-stone-500 tabular-nums"
+                          title={
+                            golfer.oddsProvider
+                              ? `Odds via ${golfer.oddsProvider}`
+                              : undefined
+                          }
+                        >
+                          {golfer.odds ?? "—"}
+                        </span>
+                      </div>
                       <Button
                         size="sm"
                         variant={isMyTurn ? "primary" : "ghost"}
