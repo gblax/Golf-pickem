@@ -788,18 +788,26 @@ export default function ManageTournamentPage() {
           </Section>
         )}
 
-        {isInProgress && (
-          <Section title="Scores">
+        {(isUpcoming || isDraftOpen || isInProgress) && (
+          <Section title="Scores & Odds">
             <div className="flex flex-wrap gap-2">
               {tournament.externalId && (
                 <Button variant="primary" onClick={fetchScores}>
-                  Fetch Scores from ESPN
+                  Fetch Scores & Odds from ESPN
                 </Button>
               )}
-              <Link href={`/tournaments/${id}/leaderboard`}>
-                <Button variant="secondary">View Leaderboard</Button>
-              </Link>
+              {isInProgress && (
+                <Link href={`/tournaments/${id}/leaderboard`}>
+                  <Button variant="secondary">View Leaderboard</Button>
+                </Link>
+              )}
             </div>
+            {(isUpcoming || isDraftOpen) && (
+              <p className="mt-2 text-xs text-stone-500">
+                Before the tournament starts, this pulls outright winner odds
+                from ESPN so drafters can see pre-tournament favorites.
+              </p>
+            )}
           </Section>
         )}
 

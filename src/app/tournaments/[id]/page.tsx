@@ -304,6 +304,7 @@ export default async function TournamentDetailPage({
                 <thead className="bg-cream-50">
                   <tr className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                     <th className="px-5 py-3 text-left">Golfer</th>
+                    <th className="px-5 py-3 text-center">Odds</th>
                     <th className="px-5 py-3 text-center">Position</th>
                     <th className="px-5 py-3 text-center">Score</th>
                     <th className="px-5 py-3 text-center">Thru</th>
@@ -331,6 +332,9 @@ export default async function TournamentDetailPage({
                           </span>
                         )}
                       </td>
+                      <td className="whitespace-nowrap px-5 py-2 text-center font-mono tabular-nums text-stone-600">
+                        {tg.odds ?? "—"}
+                      </td>
                       <td className="whitespace-nowrap px-5 py-2 text-center">
                         {tg.position || "—"}
                       </td>
@@ -345,6 +349,18 @@ export default async function TournamentDetailPage({
                 </tbody>
               </table>
             </div>
+            {(() => {
+              const withOdds = tournament.golfers.find((g) => g.odds);
+              if (!withOdds?.oddsProvider) return null;
+              return (
+                <p className="px-5 py-2 text-xs text-stone-500">
+                  Odds via {withOdds.oddsProvider}
+                  {withOdds.oddsUpdatedAt
+                    ? ` · updated ${new Date(withOdds.oddsUpdatedAt).toLocaleString()}`
+                    : ""}
+                </p>
+              );
+            })()}
           </details>
         </section>
       )}

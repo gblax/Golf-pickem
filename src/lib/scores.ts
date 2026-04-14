@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { fetchLiveScores } from "./espn";
+import { fetchLiveScores, fetchOutrightOdds } from "./espn";
 import { calculateEntryScore } from "./scoring";
 
 /**
@@ -27,7 +27,20 @@ export async function refreshTournamentScores(
     throw new Error("Tournament has no external ID for ESPN lookup");
   }
 
-  const liveScores = await fetchLiveScores(tournament.externalId);
+  // Fetch scores and odds in parallel. Odds failure is non-fatal — we still
+  // want to update scores even if the futures endpoint is flaky.
+  const [liveScores, oddsResult] = await Promise.all([
+    fetchLiveScores(tournament.externalId),
+    fetchOutrightOdds(tournament.name).catch((err) => {
+      console.warn("fetchOutrightOdds failed, continuing without odds:", err);
+      return { provider: null, entries: [] as Array<{ athleteId: string; value: string }> };
+    }),
+  ]);
+
+  const oddsByAthleteId = new Map(
+    oddsResult.entries.map((e) => [e.athleteId, e.value])
+  );
+  const oddsSyncedAt = oddsResult.entries.length > 0 ? new Date() : null;
 
   const tournamentGolfers = await prisma.tournamentGolfer.findMany({
     where: { tournamentId },
@@ -42,6 +55,10 @@ export async function refreshTournamentScores(
         s.name.toLowerCase() === tg.golfer.name.toLowerCase()
     );
 
+    const oddsValue = tg.golfer.externalId
+      ? oddsByAthleteId.get(tg.golfer.externalId) ?? null
+      : null;
+
     if (espnGolfer) {
       await prisma.tournamentGolfer.update({
         where: { id: tg.id },
@@ -52,6 +69,21 @@ export async function refreshTournamentScores(
           madeTheCut: espnGolfer.madeTheCut,
           position: espnGolfer.position,
           isWithdrawn: espnGolfer.isWithdrawn,
+          odds: oddsValue,
+          oddsProvider: oddsValue ? oddsResult.provider : null,
+          oddsUpdatedAt: oddsValue ? oddsSyncedAt : null,
+        },
+      });
+      updated++;
+    } else if (oddsValue) {
+      // Pre-tournament case: scores aren't live yet but odds are posted. Still
+      // persist odds so the draft / field pages can show them.
+      await prisma.tournamentGolfer.update({
+        where: { id: tg.id },
+        data: {
+          odds: oddsValue,
+          oddsProvider: oddsResult.provider,
+          oddsUpdatedAt: oddsSyncedAt,
         },
       });
       updated++;

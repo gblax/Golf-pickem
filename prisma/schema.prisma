@@ -44,19 +44,22 @@ model Tournament {
 }
 
 model TournamentGolfer {
-  id           String      @id @default(cuid())
-  tournamentId String
-  golferId     String
-  scoreToPar   Int?
-  currentRound Int?
-  thru         String?
-  madeTheCut   Boolean?
-  position     String?
-  isWithdrawn  Boolean     @default(false)
-  tournament   Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  golfer       Golfer      @relation(fields: [golferId], references: [id], onDelete: Cascade)
-  picks        Pick[]
-  draftPicks   DraftPick[]
+  id            String      @id @default(cuid())
+  tournamentId  String
+  golferId      String
+  scoreToPar    Int?
+  currentRound  Int?
+  thru          String?
+  madeTheCut    Boolean?
+  position      String?
+  isWithdrawn   Boolean     @default(false)
+  odds          String?     // American odds string, e.g. "+1200"
+  oddsProvider  String?     // Sportsbook name for attribution, e.g. "ESPN BET"
+  oddsUpdatedAt DateTime?
+  tournament    Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  golfer        Golfer      @relation(fields: [golferId], references: [id], onDelete: Cascade)
+  picks         Pick[]
+  draftPicks    DraftPick[]
 
   @@unique([tournamentId, golferId])
 }
