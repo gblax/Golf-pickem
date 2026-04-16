@@ -96,6 +96,9 @@ export default function DraftPage() {
   const [pickingId, setPickingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
+  const [mobileTab, setMobileTab] = useState<"golfers" | "order" | "history">(
+    "golfers"
+  );
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -105,6 +108,10 @@ export default function DraftPage() {
       const res = await fetch(`/api/drafts/${tournamentId}`);
       if (!res.ok) {
         if (res.status === 404) {
+          // Draft was reset/deleted on the server — clear local state so
+          // the "Draft Not Found" view renders cleanly and polling stops
+          // chasing a ghost.
+          setDraft(null);
           setError("No draft found for this tournament.");
           setLoading(false);
           return;
@@ -461,7 +468,6 @@ export default function DraftPage() {
   /* IN_PROGRESS STATE                                                 */
   /* ================================================================ */
   const lowTime = timerSeconds !== null && timerSeconds <= 30;
-  const [mobileTab, setMobileTab] = useState<"golfers" | "order" | "history">("golfers");
 
   return (
     <div className="animate-fade-in-up mx-auto max-w-7xl px-4 py-6">
