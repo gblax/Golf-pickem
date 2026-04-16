@@ -377,12 +377,6 @@ export default function LeaderboardPage() {
                             <p className="mt-0.5 text-xs text-stone-500">
                               <ScoreSpan score={pick.scoreToPar} />
                               {pick.thru && <> · {pick.thru}</>}
-                              {pick.position && (
-                                <span className="text-stone-400">
-                                  {" "}
-                                  · Pos {pick.position}
-                                </span>
-                              )}
                             </p>
                           )}
                         </div>
