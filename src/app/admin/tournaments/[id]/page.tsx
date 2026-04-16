@@ -77,8 +77,10 @@ export default function ManageTournamentPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [finalizeOpen, setFinalizeOpen] = useState(false);
+  const [resetDraftOpen, setResetDraftOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [resettingDraft, setResettingDraft] = useState(false);
   const [removeEntry, setRemoveEntry] = useState<EntryRow | null>(null);
   const [removingEntry, setRemovingEntry] = useState(false);
   const [buyInInput, setBuyInInput] = useState("");
@@ -262,6 +264,22 @@ export default function ManageTournamentPage() {
       const data = await res.json();
       setError(data.error || "Failed to start draft");
     }
+  }
+
+  async function resetDraft() {
+    setResettingDraft(true);
+    setError("");
+    const res = await fetch(`/api/drafts/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setMessage("Draft reset. Create a new one to start over.");
+      fetchTournament();
+      fetchEntries();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to reset draft");
+    }
+    setResettingDraft(false);
+    setResetDraftOpen(false);
   }
 
   async function fetchScores() {
@@ -778,11 +796,26 @@ export default function ManageTournamentPage() {
                     </Button>
                   </div>
                 )}
-                <Link href={`/tournaments/${id}/draft`}>
-                  <Button size="sm" variant="secondary">
-                    Open Draft Room
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/tournaments/${id}/draft`}>
+                    <Button size="sm" variant="secondary">
+                      Open Draft Room
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => setResetDraftOpen(true)}
+                  >
+                    Reset Draft
                   </Button>
-                </Link>
+                </div>
+                {tournament.draft.status !== "PENDING" && (
+                  <p className="text-xs text-stone-500">
+                    Need to restart? Reset the draft to clear all picks and
+                    start over from a clean slate.
+                  </p>
+                )}
               </div>
             )}
           </Section>
@@ -864,6 +897,24 @@ export default function ManageTournamentPage() {
         loading={finalizing}
         onConfirm={finalize}
         onCancel={() => setFinalizeOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={resetDraftOpen}
+        title="Reset draft?"
+        description={
+          <>
+            Reset the draft for <strong>{tournament.name}</strong>? This
+            permanently deletes every pick made so far and returns the
+            tournament to a pre-draft state. You can create a new draft
+            afterwards. This cannot be undone.
+          </>
+        }
+        confirmLabel="Reset Draft"
+        variant="danger"
+        loading={resettingDraft}
+        onConfirm={resetDraft}
+        onCancel={() => setResetDraftOpen(false)}
       />
 
       <ConfirmDialog
