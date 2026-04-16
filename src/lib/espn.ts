@@ -161,10 +161,23 @@ export async function fetchTournamentField(
       if (isNaN(scoreToPar)) scoreToPar = null;
     }
 
+    // ESPN exposes the display position (e.g. "T14") under
+    // status.position.displayName during live play. Fall back to the raw
+    // sort order when that field isn't populated.
+    const statusPosition = status?.position as
+      | { displayName?: string }
+      | undefined;
+    let position = "";
+    if (hasPlayed) {
+      position =
+        statusPosition?.displayName ||
+        (c.order ? String(c.order) : "");
+    }
+
     return {
       id: String(athlete?.id || c.id),
       name: String(athlete?.displayName || athlete?.shortName || "Unknown"),
-      position: hasPlayed ? String(c.order || "") : "",
+      position,
       scoreToPar,
       currentRound,
       thru: hasPlayed ? String(status?.displayValue || "") : "",
