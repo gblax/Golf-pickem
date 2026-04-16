@@ -200,6 +200,12 @@ export default function ManageTournamentPage() {
         const data = await importRes.json();
         setMessage(`Imported ${data.imported} golfers from ESPN`);
         fetchField();
+
+        // Also pull odds so they're available during the draft. Fire-
+        // and-forget — odds are nice-to-have, not blocking.
+        fetch(`/api/tournaments/${id}/scores`, { method: "POST" })
+          .then(() => fetchField())
+          .catch(() => {});
       } else {
         const data = await importRes.json();
         throw new Error(data.error || "Failed to import field");
