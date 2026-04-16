@@ -137,9 +137,6 @@ export async function fetchTournamentField(
     const status = c.status as Record<string, unknown> | undefined;
     const statusType = status?.type as Record<string, unknown> | undefined;
 
-    const scoreStr = (c.score as string) || "0";
-    const scoreToPar = scoreStr === "E" ? 0 : parseInt(scoreStr, 10);
-
     const statusName = String(statusType?.name || "");
     const isWithdrawn = statusName === "WD" || statusName === "DQ";
     const missedCut = statusName === "CUT";
@@ -152,13 +149,25 @@ export async function fetchTournamentField(
     const linescores = c.linescores as { value?: number }[] | undefined;
     const currentRound = linescores?.length ?? null;
 
+    // Only trust score and position data if the golfer has actually teed
+    // off (at least one round in linescores). Before the tournament starts,
+    // ESPN returns "0" for score and field-seed order for position — both
+    // are meaningless and confuse the leaderboard.
+    const hasPlayed = currentRound !== null && currentRound > 0;
+    const scoreStr = (c.score as string) || "";
+    let scoreToPar: number | null = null;
+    if (hasPlayed && scoreStr) {
+      scoreToPar = scoreStr === "E" ? 0 : parseInt(scoreStr, 10);
+      if (isNaN(scoreToPar)) scoreToPar = null;
+    }
+
     return {
       id: String(athlete?.id || c.id),
       name: String(athlete?.displayName || athlete?.shortName || "Unknown"),
-      position: String(c.order || ""),
-      scoreToPar: isNaN(scoreToPar) ? null : scoreToPar,
+      position: hasPlayed ? String(c.order || "") : "",
+      scoreToPar,
       currentRound,
-      thru: String(status?.displayValue || ""),
+      thru: hasPlayed ? String(status?.displayValue || "") : "",
       madeTheCut,
       isWithdrawn,
     };
