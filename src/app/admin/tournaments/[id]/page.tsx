@@ -445,9 +445,10 @@ export default function ManageTournamentPage() {
   const isDraftOpen = tournament.status === "DRAFT_OPEN";
   const isInProgress = tournament.status === "IN_PROGRESS";
   const isComplete = tournament.status === "COMPLETE";
-  const canRemoveEntries =
-    (isUpcoming || isDraftOpen) &&
-    (!tournament.draft || tournament.draft.status === "PENDING");
+  const canRemoveEntries = true;
+  const removeIsDestructive =
+    tournament.draft &&
+    tournament.draft.status !== "PENDING";
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
@@ -928,10 +929,19 @@ export default function ManageTournamentPage() {
         title="Remove entry?"
         description={
           removeEntry ? (
-            <>
-              Remove <strong>{removeEntry.userName}</strong> from this
-              tournament? They can be opted in again before the draft starts.
-            </>
+            removeIsDestructive ? (
+              <>
+                Remove <strong>{removeEntry.userName}</strong> from this
+                tournament? This will also delete their draft picks and remove
+                them from the draft order. Standings and payouts will not be
+                automatically recalculated.
+              </>
+            ) : (
+              <>
+                Remove <strong>{removeEntry.userName}</strong> from this
+                tournament? They can be opted in again before the draft starts.
+              </>
+            )
           ) : null
         }
         confirmLabel="Remove"

@@ -132,24 +132,10 @@ export async function DELETE(
 
     const tournament = await prisma.tournament.findUnique({
       where: { id },
-      include: { draft: { select: { status: true } } },
+      include: { draft: { select: { id: true, status: true, draftOrder: true } } },
     });
     if (!tournament) {
       return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
-    }
-
-    if (tournament.status !== "UPCOMING" && tournament.status !== "DRAFT_OPEN") {
-      return NextResponse.json(
-        { error: "Entries can only be removed before the draft starts" },
-        { status: 400 }
-      );
-    }
-
-    if (tournament.draft && tournament.draft.status !== "PENDING") {
-      return NextResponse.json(
-        { error: "Cannot remove entries after the draft has started" },
-        { status: 400 }
-      );
     }
 
     const existing = await prisma.weekEntry.findUnique({
@@ -164,7 +150,21 @@ export async function DELETE(
       );
     }
 
-    // WeekEntry.picks cascades on delete. No draft picks exist yet at this stage.
+    // Clean up draft data for this user if a draft exists.
+    if (tournament.draft) {
+      const draftId = tournament.draft.id;
+      await prisma.draftPick.deleteMany({ where: { draftId, userId } });
+
+      // Remove the user from the draft order array.
+      const order: string[] = JSON.parse(tournament.draft.draftOrder || "[]");
+      const newOrder = order.filter((uid) => uid !== userId);
+      await prisma.draft.update({
+        where: { id: draftId },
+        data: { draftOrder: JSON.stringify(newOrder) },
+      });
+    }
+
+    // WeekEntry.picks cascade on delete.
     await prisma.weekEntry.delete({ where: { id: existing.id } });
 
     return NextResponse.json({ ok: true });
