@@ -83,6 +83,15 @@ export default async function TournamentDetailPage({
 
   if (!tournament) return notFound();
 
+  const sortedEntries = [...tournament.entries].sort((a, b) => {
+    if (a.isDisqualified !== b.isDisqualified)
+      return a.isDisqualified ? 1 : -1;
+    if (a.totalScore === null && b.totalScore === null) return 0;
+    if (a.totalScore === null) return 1;
+    if (b.totalScore === null) return -1;
+    return a.totalScore - b.totalScore;
+  });
+
   const userEntry = userId
     ? tournament.entries.find((e) => e.userId === userId)
     : null;
@@ -230,13 +239,14 @@ export default async function TournamentDetailPage({
               <table className="min-w-full divide-y divide-stone-100">
                 <thead className="bg-cream-50">
                   <tr className="text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+                    <th className="w-10 px-3 py-3 text-center">#</th>
                     <th className="px-5 py-3">Player</th>
                     <th className="px-5 py-3">Picks</th>
                     <th className="px-5 py-3 text-center">Score</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 text-sm">
-                  {tournament.entries.map((entry) => (
+                  {sortedEntries.map((entry, idx) => (
                     <tr
                       key={entry.id}
                       className={cn(
@@ -244,6 +254,14 @@ export default async function TournamentDetailPage({
                         entry.userId === userId && "bg-emerald-50/50"
                       )}
                     >
+                      <td className="w-10 px-3 py-3 text-center text-xs font-medium text-stone-400">
+                        {entry.isDisqualified || entry.totalScore === null
+                          ? "—"
+                          : sortedEntries.findIndex(
+                                (e) => e.totalScore === entry.totalScore && !e.isDisqualified
+                              ) +
+                            1}
+                      </td>
                       <td className="whitespace-nowrap px-5 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar

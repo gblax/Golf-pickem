@@ -56,19 +56,39 @@ export function rankEntries(
     };
   });
 
+  // Best individual golfer score for a given entry (lower = better in golf).
+  function bestPick(e: (typeof scored)[0]): number {
+    const scores = e.picks
+      .map((p) => p.tournamentGolfer.scoreToPar)
+      .filter((s): s is number => s !== null);
+    return scores.length ? Math.min(...scores) : Infinity;
+  }
+
   // Separate active from DQ'd
   const active = scored
     .filter((e) => !e.calculatedDQ && e.calculatedScore !== null)
-    .sort((a, b) => a.calculatedScore! - b.calculatedScore!);
+    .sort((a, b) => {
+      // Primary: combined score
+      if (a.calculatedScore! !== b.calculatedScore!) {
+        return a.calculatedScore! - b.calculatedScore!;
+      }
+      // Tiebreaker: best individual golfer score
+      return bestPick(a) - bestPick(b);
+    });
 
   const dqOrPending = scored.filter(
     (e) => e.calculatedDQ || e.calculatedScore === null
   );
 
-  // Assign ranks with ties sharing the higher position
+  // Assign ranks — entries are only truly tied when both combined score
+  // and best individual score match.
   let currentRank = 1;
   for (let i = 0; i < active.length; i++) {
-    if (i > 0 && active[i].calculatedScore !== active[i - 1].calculatedScore) {
+    if (
+      i > 0 &&
+      (active[i].calculatedScore !== active[i - 1].calculatedScore ||
+        bestPick(active[i]) !== bestPick(active[i - 1]))
+    ) {
       currentRank = i + 1;
     }
     active[i].rank = currentRank;
