@@ -10,6 +10,7 @@ export async function GET() {
       },
       include: {
         user: { select: { id: true, name: true } },
+        tournament: { select: { buyIn: true } },
       },
     });
 
@@ -21,6 +22,7 @@ export async function GET() {
         userName: string;
         totalEntries: number;
         totalWinnings: number;
+        totalSpent: number;
         bestFinish: number | null;
         wins: number;
       }
@@ -32,12 +34,14 @@ export async function GET() {
         userName: entry.user.name,
         totalEntries: 0,
         totalWinnings: 0,
+        totalSpent: 0,
         bestFinish: null,
         wins: 0,
       };
 
       stats.totalEntries++;
       stats.totalWinnings += entry.payout ?? 0;
+      stats.totalSpent += entry.tournament.buyIn;
 
       if (entry.finishPosition !== null) {
         if (stats.bestFinish === null || entry.finishPosition < stats.bestFinish) {

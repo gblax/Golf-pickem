@@ -20,6 +20,7 @@ interface StandingEntry {
   userName: string;
   totalEntries: number;
   totalWinnings: number;
+  totalSpent: number;
   bestFinish: number | null;
   wins: number;
 }
@@ -31,10 +32,9 @@ function formatPlace(pos: number): string {
   return `${pos}th`;
 }
 
-function calcRoi(totalWinnings: number, totalEntries: number) {
-  const buyInTotal = totalEntries * 5000;
-  if (buyInTotal === 0) return null;
-  return ((totalWinnings - buyInTotal) / buyInTotal) * 100;
+function calcRoi(totalWinnings: number, totalSpent: number) {
+  if (totalSpent === 0) return null;
+  return ((totalWinnings - totalSpent) / totalSpent) * 100;
 }
 
 function RoiLabel({ value }: { value: number | null }) {
@@ -126,7 +126,7 @@ export default function StandingsPage() {
                   {standings.map((entry, index) => {
                     const rank = index + 1;
                     const isTop3 = rank <= 3;
-                    const roi = calcRoi(entry.totalWinnings, entry.totalEntries);
+                    const roi = calcRoi(entry.totalWinnings, entry.totalSpent);
                     return (
                       <tr
                         key={entry.userId}
@@ -188,7 +188,7 @@ export default function StandingsPage() {
             {standings.map((entry, index) => {
               const rank = index + 1;
               const isTop3 = rank <= 3;
-              const roi = calcRoi(entry.totalWinnings, entry.totalEntries);
+              const roi = calcRoi(entry.totalWinnings, entry.totalSpent);
               return (
                 <Card key={entry.userId} accent={isTop3 ? "gold" : "none"}>
                   <CardContent className="p-4">

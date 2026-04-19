@@ -23,7 +23,7 @@ export default async function TournamentsPage() {
       _count: { select: { entries: true } },
     },
   });
-  const tournaments = sortTournamentsByRelevance(all).slice(0, 20);
+  const tournaments = sortTournamentsByRelevance(all);
 
   const activeTournaments = tournaments.filter(
     (t) =>
