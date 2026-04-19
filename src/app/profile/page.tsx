@@ -30,6 +30,7 @@ interface ProfileEntry {
     name: string;
     status: string;
     startDate: Date | string;
+    buyIn: number;
   };
   picks: {
     tournamentGolfer: {
@@ -56,7 +57,7 @@ export default async function ProfilePage() {
       entries: {
         include: {
           tournament: {
-            select: { id: true, name: true, status: true, startDate: true },
+            select: { id: true, name: true, status: true, startDate: true, buyIn: true },
           },
           picks: {
             include: {
@@ -80,7 +81,7 @@ export default async function ProfilePage() {
   const completedEntries = entries.filter(
     (e) => e.tournament.status === "COMPLETE"
   );
-  const totalBuyIns = completedEntries.length * 5000; // default $50
+  const totalBuyIns = completedEntries.reduce((sum, e) => sum + e.tournament.buyIn, 0);
 
   const bestFinish = (() => {
     const finishes = entries
